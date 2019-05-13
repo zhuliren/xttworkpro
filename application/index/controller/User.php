@@ -34,16 +34,25 @@ class User
         $output = json_decode($output, true);
         if (isset($output['openid']) || (isset($output['errcode']) ? $output['errcode'] : 0) == 0) {
             $openid = $output['openid'];
-            $userdata = Db::table('user')->where('wxid', $openid)->find();
-            if ($userdata) {
-                $id = $userdata['id'];
-                $name = $userdata['name'];
-                $account = $userdata['account'];
-                $returndata = array('id' => $id, 'name' => $name, 'account' => $account);
+            //判断是否为代理商
+            $distributordata = Db::table('distributor')->where('wxid', $openid)->find();
+            if ($distributordata) {
+                $id = $distributordata['id'];
+                $name = $distributordata['name'];
+                $account = $distributordata['account'];
+                $type = $distributordata['type'];
+                $grade = $distributordata['grade'];
+                $returndata = array('id' => $id, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             } else {
-                $returndata = array('openid' => $openid);
-                $data = array('status' => 1, 'msg' => '未绑定经销商', 'data' => $returndata);
+                $userdata = Db::table('user')->where('wxid', $openid)->find();
+                if ($userdata) {
+                    $user_id = $userdata['id'];
+                } else {
+                    $user_id = Db::table('user')->insertGetId(['wxid' => $openid, 'creattime' => date("Y-m-d h:i:s", time())]);
+                }
+                $returndata = array('openid' => $openid, 'userid' => $user_id);
+                $data = array('status' => 10, 'msg' => '未绑定经销商', 'data' => $returndata);
             }
             return json($data);
         } else if ($output['errcode'] == 40029) {
@@ -68,16 +77,18 @@ class User
         //密码双重md5加密
         $password = md5(md5($_REQUEST['password']));
         //判断密码是否正确
-        $userdata = Db::table('user')->where('account', $account)->where('password', $password)->find();
-        if ($userdata) {
-            if ($userdata['wxid']) {
+        $distributordata = Db::table('distributor')->where('account', $account)->where('password', $password)->find();
+        if ($distributordata) {
+            if ($distributordata['wxid']) {
                 $data = array('status' => 1, 'msg' => '该账号已被绑定，如有问题请联系客服', 'data' => '');
             } else {
-                $id = $userdata['id'];
-                $name = $userdata['name'];
-//                $account = $userdata['account'];
-                Db::table('user')->where('id', $id)->update(['wxid' => $openid]);
-                $returndata = array('id' => $id, 'name' => $name, 'account' => $account);
+                $did = $distributordata['id'];
+                $name = $distributordata['name'];
+                $account = $distributordata['account'];
+                $type = $distributordata['type'];
+                $grade = $distributordata['grade'];
+                Db::table('user')->where('id', $did)->update(['wxid' => $openid]);
+                $returndata = array('did' => $did, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             }
         } else {

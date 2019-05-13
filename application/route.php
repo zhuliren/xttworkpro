@@ -8,14 +8,26 @@
 // +----------------------------------------------------------------------
 // | Author: liu21st <liu21st@gmail.com>
 // +----------------------------------------------------------------------
+use think\Route;
 
-return [
-    '__pattern__' => [
-        'name' => '\w+',
-    ],
-    '[hello]'     => [
-        ':id'   => ['index/hello', ['method' => 'get'], ['id' => '\d+']],
-        ':name' => ['index/hello', ['method' => 'post']],
-    ],
+//Route::rule('路由表达式','路由地址','请求类型','路由参数（数组）','变量规则（数组）');
+//用户模块
+Route::rule('wxlogin', 'index/User/wxlogin');
+Route::rule('login', 'index/User/login');
 
-];
+//商品模块
+Route::rule('creatGoods', 'index/Goods/creatGoods');
+Route::rule('addGoodsSize', 'index/Goods/addGoodsSize');
+Route::rule('updGoodsInfo', 'index/Goods/updGoodsInfo');
+Route::rule('updGoodsSize', 'index/Goods/updGoodsSize');
+Route::rule('delGoods', 'index/Goods/delGoods');
+Route::rule('delGoodsSize', 'index/Goods/delGoodsSize');
+Route::rule('getGoosList', 'index/Goods/getGoosList');
+Route::rule('getGoodsSize', 'index/Goods/getGoodsSize');
+Route::rule('getGoodsListWithSize', 'index/Goods/getGoodsListWithSize');
+
+//代理商模块
+Route::rule('distributorInfo', 'index/Distributor/distributorInfo');
+Route::rule('creatDistributor', 'index/Distributor/creatDistributor');
+Route::rule('updDistributorInfo', 'index/Distributor/updDistributorInfo');
+Route::rule('updDistributorPwd', 'index/Distributor/updDistributorPwd');
