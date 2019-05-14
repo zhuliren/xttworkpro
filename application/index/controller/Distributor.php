@@ -94,4 +94,68 @@ class Distributor
         }
         return json($data);
     }
+
+    public function setMyshop()
+    {
+        $region_id = $_REQUEST['region_id'];
+        $shop_id = $_REQUEST['shop_id'];
+        //判断权限
+        $regiondata = Db::table('distributor')->where('id', $region_id)->where('type', 1)->find();
+        $shopdata = Db::table('distributor')->where('id', $shop_id)->where('type', 2)->find();
+        if ($regiondata) {
+            $data = array('status' => 1, 'msg' => '区域代理id错误', 'data' => '');
+        } elseif ($shopdata) {
+            $data = array('status' => 1, 'msg' => '店铺代理id错误', 'data' => '');
+        } else {
+            //查询shop是否绑定
+            $channerdata = Db::table('channer')->where('shop_id', $shop_id)->find();
+            if ($channerdata) {
+                $region_id = $channerdata['region_id'];
+                $data = array('status' => 10, 'msg' => '店铺已绑定区域代理商', 'data' => array('region_id' => $region_id));
+            } else {
+                //绑定
+                Db::table('channer')->insert(['region_id' => $region_id, 'shop_id' => $shop_id]);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+            }
+        }
+        return json($data);
+    }
+
+    public function showMyShop()
+    {
+        $region_id = $_REQUEST['did'];
+        $regiondata = Db::table('distributor')->where('id', $region_id)->where('type', 1)->find();
+        if ($regiondata) {
+            $data = array('status' => 1, 'msg' => '该id非区域代理id', 'data' => '');
+        } else {
+            $channerviewdata = Db::view('channer', 'region_id,shop_id')
+                ->view('distributor', 'id,name,phone,grade,address,due', 'channer.shop_id=distributor.id', 'LEFT')
+                ->where('channer.region_id', $region_id);
+            if ($channerviewdata) {
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $channerviewdata);
+            } else {
+                $data = array('status' => 1, 'msg' => '该id无店铺代理', 'data' => '');
+            }
+        }
+        return json($data);
+    }
+
+    public function myLC()
+    {
+        //我的信用额度
+        $did = $_REQUEST['did'];
+        $lcdata = Db::table('distributor')->where('id', $did)->find();
+        if ($lcdata) {
+            $lc = $lcdata['lc'];
+            $usedlc = $lcdata['usedlc'];
+            $lchisdata = Db::table('lc_history')->where('did', $did)->column('amount,type,creattime');
+            $returndata = array('lc' => $lc, 'usedlc' => $usedlc, 'lchisdata' => $lchisdata);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+
 }

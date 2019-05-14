@@ -31,3 +31,10 @@ Route::rule('distributorInfo', 'index/Distributor/distributorInfo');
 Route::rule('creatDistributor', 'index/Distributor/creatDistributor');
 Route::rule('updDistributorInfo', 'index/Distributor/updDistributorInfo');
 Route::rule('updDistributorPwd', 'index/Distributor/updDistributorPwd');
+Route::rule('setMyshop', 'index/Distributor/setMyshop');
+Route::rule('showMyShop', 'index/Distributor/showMyShop');
+
+//代理商购物车模块
+Route::rule('addGoods', 'index/ShopCar/addGoods');
+Route::rule('updGoodsNum', 'index/ShopCar/updGoodsNum');
+

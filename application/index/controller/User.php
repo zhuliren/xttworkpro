@@ -49,7 +49,7 @@ class User
                 if ($userdata) {
                     $user_id = $userdata['id'];
                 } else {
-                    $user_id = Db::table('user')->insertGetId(['wxid' => $openid, 'creattime' => date("Y-m-d h:i:s", time())]);
+                    $user_id = Db::table('user')->insertGetId(['wxid' => $openid, 'creattime' => date("Y-m-d H:i:s", time())]);
                 }
                 $returndata = array('openid' => $openid, 'userid' => $user_id);
                 $data = array('status' => 10, 'msg' => '未绑定经销商', 'data' => $returndata);
@@ -87,7 +87,7 @@ class User
                 $account = $distributordata['account'];
                 $type = $distributordata['type'];
                 $grade = $distributordata['grade'];
-                Db::table('user')->where('id', $did)->update(['wxid' => $openid]);
+                Db::table('distributor')->where('id', $did)->update(['wxid' => $openid]);
                 $returndata = array('did' => $did, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             }
