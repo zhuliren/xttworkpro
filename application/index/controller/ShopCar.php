@@ -22,8 +22,8 @@ class ShopCar
         if ($shopcardata) {
             $shopcarid = $shopcardata['id'];
             $num = $shopcardata['num'];
-            $newnum = $num++;
-            Db::table('shopcar')->where('id', $shopcarid)->update(['num' => $newnum]);
+            $num++;
+            Db::table('shopcar')->where('id', $shopcarid)->update(['num' => $num]);
             $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         } else {
             //查询规格的商品id
@@ -90,8 +90,8 @@ class ShopCar
     {
         $did = $_REQUEST['did'];
         $shopcardata = Db::view('shopcar', 'goods_size_id,goods_id,num')
-            ->view('goods', 'id,name,headimg', 'shopcar.goods_id=goods.id', 'LEFT')
-            ->view('goods_size', 'id,size,cost', 'shopcar.goods_size_id=goods_size.id', 'LEFT')
+            ->view('goods', 'name,headimg', 'shopcar.goods_id=goods.id', 'LEFT')
+            ->view('goods_size', 'size,cost', 'shopcar.goods_size_id=goods_size.id', 'LEFT')
             ->where('did', $did)
             ->order('goods_id desc');
         $data = array('status' => 0, 'msg' => '成功', 'data' => $shopcardata);
