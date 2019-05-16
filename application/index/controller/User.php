@@ -37,12 +37,12 @@ class User
             //判断是否为代理商
             $distributordata = Db::table('distributor')->where('wxid', $openid)->find();
             if ($distributordata) {
-                $id = $distributordata['id'];
+                $did = $distributordata['id'];
                 $name = $distributordata['name'];
                 $account = $distributordata['account'];
                 $type = $distributordata['type'];
                 $grade = $distributordata['grade'];
-                $returndata = array('id' => $id, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
+                $returndata = array('did' => $did, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             } else {
                 $userdata = Db::table('user')->where('wxid', $openid)->find();
