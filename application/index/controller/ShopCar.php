@@ -73,12 +73,12 @@ class ShopCar
                     $num++;
                     break;
             }
-            if ($num == 0) {
-                Db::table('shopcar')->where('id', $shopcarid)->update(['num' => $num]);
-                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
-            } else {
+            if ($num <= 0) {
                 Db::table('shopcar')->delete($shopcarid);
                 $data = array('status' => 0, 'msg' => '该规格已删除', 'data' => '');
+            } else {
+                Db::table('shopcar')->where('id', $shopcarid)->update(['num' => $num]);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
             }
         } else {
             $data = array('status' => 1, 'msg' => '该规格不存在', 'data' => '');
@@ -89,11 +89,12 @@ class ShopCar
     public function showShopCar()
     {
         $did = $_REQUEST['did'];
-        $shopcardata = Db::view('shopcar', 'goods_size_id,goods_id,num')
+        $shopcardata = Db::view('shopcar', 'goods_size_id,goods_id,num,ischoose')
             ->view('goods', 'name,headimg', 'shopcar.goods_id=goods.id', 'LEFT')
             ->view('goods_size', 'size,cost', 'shopcar.goods_size_id=goods_size.id', 'LEFT')
             ->where('did', $did)
-            ->order('goods_id desc');
+            ->order('goods_id desc')
+            ->select();
         $data = array('status' => 0, 'msg' => '成功', 'data' => $shopcardata);
         return json($data);
     }
@@ -112,7 +113,7 @@ class ShopCar
                     $newischoose = 1;
                     break;
                 case 1:
-                    $newischoose = 1;
+                    $newischoose = 0;
                     break;
             }
             Db::table('shopcar')->where('id', $shopcarid)->update(['ischoose' => $newischoose]);

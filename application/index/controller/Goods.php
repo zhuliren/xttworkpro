@@ -125,7 +125,7 @@ class Goods
         $goods_id = $_REQUEST['goodsid'];
         $goodssizedata = Db::table('goods_size')
             ->where('goods_id', $goods_id)
-            ->column('size,cost,price');
+            ->column('id as sizeid,size,cost,price');
         $data = array('status' => 0, 'msg' => '成功', 'data' => $goodssizedata);
         return json($data);
     }
@@ -142,7 +142,7 @@ class Goods
             $goods_id = $goodslistdatum['id'];
             $goodssizedata = Db::table('goods_size')
                 ->where('goods_id', $goods_id)
-                ->column('size,cost,price');
+                ->column('id as sizeid,size,cost,price');
             $returndata[] = array('goodsinfo' => $goodslistdatum, 'goodssizeinfo' => $goodssizedata);
         }
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);

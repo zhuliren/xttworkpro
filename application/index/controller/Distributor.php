@@ -126,16 +126,29 @@ class Distributor
         $region_id = $_REQUEST['did'];
         $regiondata = Db::table('distributor')->where('id', $region_id)->where('type', 1)->find();
         if ($regiondata) {
-            $data = array('status' => 1, 'msg' => '该id非区域代理id', 'data' => '');
-        } else {
             $channerviewdata = Db::view('channer', 'region_id,shop_id')
                 ->view('distributor', 'id,name,phone,grade,address,due', 'channer.shop_id=distributor.id', 'LEFT')
-                ->where('channer.region_id', $region_id);
+                ->where('channer.region_id', $region_id)
+                ->select();
+            $channerdata = array();
+            //重组数据
+            foreach ($channerviewdata as $item) {
+                $itemshopid = $item['shop_id'];
+                $itemordernum = Db::table('order')->where('did', $itemshopid)->count('did');
+                $itemcardnum = Db::table('card')->where('did', $itemshopid)->count('did');
+                $itemusedcardnum = Db::table('card')->where('did', $itemshopid)->where('type', 3)->count('did');
+                $item['ordernum'] = $itemordernum;
+                $item['cardnum'] = $itemcardnum;
+                $item['usedcardnum'] = $itemusedcardnum;
+                $channerdata[] = $item;
+            }
             if ($channerviewdata) {
-                $data = array('status' => 0, 'msg' => '成功', 'data' => $channerviewdata);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $channerdata);
             } else {
                 $data = array('status' => 1, 'msg' => '该id无店铺代理', 'data' => '');
             }
+        } else {
+            $data = array('status' => 1, 'msg' => '该id非区域代理id', 'data' => '');
         }
         return json($data);
     }
@@ -157,5 +170,19 @@ class Distributor
         return json($data);
     }
 
-
+    public function getRequstOrderInfo()
+    {
+        $did = $_REQUEST['did'];
+        $distributordata = Db::table('distributor')->where('id',$did)->find();
+        if($distributordata){
+            $name = $distributordata['name'];
+            $phone = $distributordata['phone'];
+            $address = $distributordata['address'];
+            $returndata = array('name'=>$name,'phone'=>$phone,'address'=>$address);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        }else{
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
 }
