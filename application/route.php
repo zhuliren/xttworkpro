@@ -47,6 +47,7 @@ Route::rule('creatDOrder', 'index/DOrder/creatDOrder');
 Route::rule('myShopOrderList', 'index/DOrder/myShopOrderList');
 Route::rule('dOrderDetails', 'index/DOrder/dOrderDetails');
 Route::rule('dConfirmOrder', 'index/DOrder/dConfirmOrder');
+Route::rule('myDOrderList', 'index/DOrder/myOrderList');
 
 //卡券模块
 Route::rule('creatCard', 'index/Card/creatCard');
@@ -59,3 +60,13 @@ Route::rule('userGetCardInfo', 'index/Card/userGetCardInfo');
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
 Route::rule('myOrderList', 'index/UserOrder/myOrderList');
+
+//代理商授信模块
+Route::rule('myLc', 'index/Lc/myLc');
+Route::rule('lcHis', 'index/Lc/lcHis');
+Route::rule('reLc', 'index/Lc/reLc');
+Route::rule('changeLc', 'index/Lc/changeLc');
+
+//后台管理模块
+Route::rule('creatRoot', 'index/Root/creatRoot');
+Route::rule('rootLogin', 'index/Root/login');

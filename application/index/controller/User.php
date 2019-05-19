@@ -96,4 +96,11 @@ class User
         }
         return json($data);
     }
+
+    public function intoUserInfo()
+    {
+        $user_id = $_REQUEST['userid'];
+        $name = $_REQUEST['name'];
+        $headimg = $_REQUEST['headimg'];
+    }
 }

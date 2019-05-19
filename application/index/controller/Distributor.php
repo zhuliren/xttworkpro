@@ -19,13 +19,40 @@ class Distributor
         $password = md5(md5($_REQUEST['password']));
         $address = $_REQUEST['address'];
         $type = $_REQUEST['type'];
-        $grade = $_REQUEST['grade'];
+        $grade = $_REQUEST['grade'];//经销商等级 1、S+ 2、S 3、A 4、B 5、C 6、精选店 7、优选店 8、旗舰店
         $name = $_REQUEST['name'];
         $phone = $_REQUEST['phone'];
         $due = $_REQUEST['due'];
+        $lc = 0;
+        switch ($grade) {
+            case 1:
+                $lc = 600000;
+                break;
+            case 2:
+                $lc = 150000;
+                break;
+            case 3:
+                $lc = 100000;
+                break;
+            case 4:
+                $lc = 50000;
+                break;
+            case 5:
+                $lc = 30000;
+                break;
+            case 6:
+                $lc = 30000;
+                break;
+            case 7:
+                $lc = 20000;
+                break;
+            case 8:
+                $lc = 10000;
+                break;
+        }
         $did = Db::table('distributor')->insertGetId(['account' => $account,
             'password' => $password, 'address' => $address, 'type' => $type,
-            'grade' => $grade, 'name' => $name, 'phone' => $phone, 'due' => $due,]);
+            'grade' => $grade, 'name' => $name, 'phone' => $phone, 'due' => $due, 'lc' => $lc, 'usedlc' => 0]);
         $returndata = array('did' => $did);
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
@@ -173,14 +200,14 @@ class Distributor
     public function getRequstOrderInfo()
     {
         $did = $_REQUEST['did'];
-        $distributordata = Db::table('distributor')->where('id',$did)->find();
-        if($distributordata){
+        $distributordata = Db::table('distributor')->where('id', $did)->find();
+        if ($distributordata) {
             $name = $distributordata['name'];
             $phone = $distributordata['phone'];
             $address = $distributordata['address'];
-            $returndata = array('name'=>$name,'phone'=>$phone,'address'=>$address);
+            $returndata = array('name' => $name, 'phone' => $phone, 'address' => $address);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
-        }else{
+        } else {
             $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
         }
         return json($data);

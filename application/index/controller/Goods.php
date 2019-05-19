@@ -56,7 +56,8 @@ class Goods
         $size = $_REQUEST['size'];//商品规格
         $cost = $_REQUEST['cost'];//商品拿货价
         $price = $_REQUEST['price'];//商品建议售价
-        $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price]);
+        $card_price = $_REQUEST['cardprice'];//商品券面价
+        $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price,'card_price'=>$card_price]);
         $returndata = array('sizeid' => $size_id, 'goodsid' => $goods_id);
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
@@ -84,9 +85,10 @@ class Goods
         $size = $_REQUEST['size'];//商品规格
         $cost = $_REQUEST['cost'];//商品拿货价
         $price = $_REQUEST['price'];//商品建议售价
+        $card_price = $_REQUEST['cardprice'];//商品券面价
         Db::table('goods_size')
             ->where('id', $size_id)
-            ->update(['size' => $size, 'cost' => $cost, 'price' => $price]);
+            ->update(['size' => $size, 'cost' => $cost, 'price' => $price,'card_price'=>$card_price]);
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         return json($data);
     }
@@ -125,7 +127,7 @@ class Goods
         $goods_id = $_REQUEST['goodsid'];
         $goodssizedata = Db::table('goods_size')
             ->where('goods_id', $goods_id)
-            ->column('id as sizeid,size,cost,price');
+            ->column('id as sizeid,size,cost,price,card_price');
         $data = array('status' => 0, 'msg' => '成功', 'data' => $goodssizedata);
         return json($data);
     }
@@ -142,7 +144,7 @@ class Goods
             $goods_id = $goodslistdatum['id'];
             $goodssizedata = Db::table('goods_size')
                 ->where('goods_id', $goods_id)
-                ->column('id as sizeid,size,cost,price');
+                ->column('id as sizeid,size,cost,price,card_price');
             $returndata[] = array('goodsinfo' => $goodslistdatum, 'goodssizeinfo' => $goodssizedata);
         }
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);

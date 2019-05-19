@@ -16,7 +16,8 @@ class DOrder
     public function creatDOrder()
     {
         $did = $_REQUEST['did'];
-        $pay_type = $_REQUEST['paytype'];//支付方式 0、现金 1、授信
+        $pay_type = $_REQUEST['paytype'];//支付方式  0、现金支付 1、授信支付
+        $iscard = $_REQUEST['iscard'];//0、卡券1、现货
         //判断订单类型 若为门店并使用现金支付则需要区域确认，其他情况均为财务确认
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
@@ -62,7 +63,7 @@ class DOrder
                 }
                 //创建订单
                 Db::table('order')
-                    ->insert(['order_id' => $order_id, 'did' => $did, 'creat_time' => date("Y-m-d H:i:s", time()), 'paytype' => $pay_type, 'paytype' => $order_id, 'ordertype' => $ordertype, 'payprice' => $payprice]);
+                    ->insert(['order_id' => $order_id, 'did' => $did, 'creat_time' => date("Y-m-d H:i:s", time()), 'paytype' => $pay_type, 'ordertype' => $ordertype, 'payprice' => $payprice, 'iscard' => $iscard]);
                 $returndata = array('order_id' => $order_id);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             }
@@ -79,8 +80,8 @@ class DOrder
         $myshoporderlist = array();
         $channerdata = Db::table('channer')->where('region_id', $did)->column('shop_id');
         foreach ($channerdata as $item) {
-            $shop_id = $item['shop_id'];
-            $orderdata = Db::table('order')->where('did', $shop_id)->where('ordertype', $ordertype)->column('order_id,creat_time,paytype,ordertype,payprice');
+            $shop_id = $item;
+            $orderdata = Db::table('order')->where('did', $shop_id)->where('ordertype', $ordertype)->column('order_id,creat_time,paytype,ordertype,payprice,iscard');
             if ($orderdata) {
                 $myshoporderlist[] = $orderdata;
             }
@@ -96,12 +97,15 @@ class DOrder
     public function dOrderDetails()
     {
         $order_id = $_REQUEST['orderid'];
-        $orderdata = Db::table('order')->where('orderid', $order_id)->column('order_id,creat_time,paytype,ordertype,payprice');
+        $orderdata = Db::view('order','order_id,creat_time,paytype,ordertype,payprice,iscard')
+            ->view('distributor','name,phone,address','order.did=distributor.id')
+            ->where('order.order_id', $order_id)
+            ->select();
         if ($orderdata) {
             $orderdetailsdata = Db::view('order_details', 'goods_num')
                 ->view('goods_size', 'size,cost,price,card_price', 'order_details.goods_size_id=goods_size.id', 'LEFT')
                 ->view('goods', 'name,headimg', 'goods_size.goods_id=goods.id', 'LEFT')
-                ->where('order_details.orderid', $order_id)
+                ->where('order_details.order_id', $order_id)
                 ->select();
             $returndata = array('orderdata' => $orderdata, 'orderdetailsdata' => $orderdetailsdata);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
@@ -127,6 +131,18 @@ class DOrder
             }
         }
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+    }
+
+    public function myOrderList()
+    {
+        $did = $_REQUEST['did'];
+        $orderlistdata = Db::table('order')->where('did', $did)->column('order_id,creat_time,paytype,ordertype,payprice,iscard');
+        if ($orderlistdata) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $orderlistdata);
+        } else {
+            $data = array('status' => 1, 'msg' => '暂无订单', 'data' => '');
+        }
         return json($data);
     }
 }
