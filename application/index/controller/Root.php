@@ -24,12 +24,32 @@ class Root
         $pwd = md5(md5($_REQUEST['pwd']));
         $rootdata = Db::table('root')->where('acc', $acc)->where('pwd', $pwd)->find();
         if ($rootdata) {
-            $returndata = array('rid' => $rootdata['id'], 'type' => $rootdata['type']);
+            //匹配菜单
+            switch ($rootdata['type']) {
+                case 0:
+                    //0、超级管理员
+                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理');
+                    break;
+                case 1:
+                    // 1、运维账号
+                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理');
+                    break;
+                case 2:
+                    // 2、财务账号
+                    $menu = array('订单查看', '代理商授信恢复', '代理商授信修改');
+                    break;
+                case 3:
+                    // 3、仓管账号
+                    $menu = array('订单列表');
+                    break;
+            }
+            $returndata = array('rid' => $rootdata['id'], 'type' => $rootdata['type'], 'menu' => $menu);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         } else {
             $ddata = Db::table('distributor')->where('account', $acc)->where('password', $pwd)->find();
             if ($ddata) {
-                $returndata = array('did' => $ddata['did'], 'name' => $ddata['name'], 'account' => $ddata['account'], 'type' => $ddata['type'], 'grade' => $ddata['grade']);
+                $menu = array('商品库', '我的订单', '我的客户', '我的卡券');
+                $returndata = array('did' => $ddata['did'], 'name' => $ddata['name'], 'account' => $ddata['account'], 'type' => $ddata['type'], 'grade' => $ddata['grade'], 'menu' => $menu);
                 $data = array('status' => 10, 'msg' => '代理商登录', 'data' => $returndata);
             } else {
                 $data = array('status' => 1, 'msg' => '请检查账号密码', 'data' => '');
@@ -38,15 +58,18 @@ class Root
         return json($data);
     }
 
-    public function userList(){
+    public function userList()
+    {
         Db::table('user')->column();
     }
 
-    public function dList(){
+    public function dList()
+    {
 
     }
 
-    public function rootList(){
+    public function rootList()
+    {
 
     }
 }
