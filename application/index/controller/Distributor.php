@@ -128,10 +128,10 @@ class Distributor
         $shop_id = $_REQUEST['shop_id'];
         //判断权限
         $regiondata = Db::table('distributor')->where('id', $region_id)->where('type', 1)->find();
-        $shopdata = Db::table('distributor')->where('id', $shop_id)->where('type', 2)->find();
-        if ($regiondata) {
+        $shopdata = Db::table('distributor')->where('id', $shop_id)->where('type', 2)->select(false);
+        if (!$regiondata) {
             $data = array('status' => 1, 'msg' => '区域代理id错误', 'data' => '');
-        } elseif ($shopdata) {
+        } elseif (!$shopdata) {
             $data = array('status' => 1, 'msg' => '店铺代理id错误', 'data' => '');
         } else {
             //查询shop是否绑定

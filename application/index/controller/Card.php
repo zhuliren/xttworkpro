@@ -142,4 +142,12 @@ class Card
         return json($data);
     }
 
+    public function cardList()
+    {
+        $limit = $_REQUEST['limit'];
+        $page = $_REQUEST['page'];
+        $start = $page * $limit;
+        $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('acc,pwd,creat_time');
+        return json($selectgoods);
+    }
 }

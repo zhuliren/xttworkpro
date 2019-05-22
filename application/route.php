@@ -56,6 +56,7 @@ Route::rule('getCardInfo', 'index/Card/getCardInfo');
 Route::rule('bindingCard', 'index/Card/bindingCard');
 Route::rule('actCard', 'index/Card/actCard');
 Route::rule('userGetCardInfo', 'index/Card/userGetCardInfo');
+Route::rule('cardList', 'index/Card/cardList');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
