@@ -28,7 +28,7 @@ class Root
             switch ($rootdata['type']) {
                 case 0:
                     //0、超级管理员
-                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理');
+                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理','后端管理员管理');
                     break;
                 case 1:
                     // 1、运维账号
@@ -60,16 +60,34 @@ class Root
 
     public function userList()
     {
-        Db::table('user')->column();
+        $userdata = Db::table('user')->column('id,name,headimg,creattime');
+        if($userdata){
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $userdata);
+        }else{
+            $data = array('status' => 1, 'msg' => '无用户', 'data' => '');
+        }
+        return json($data);
     }
 
     public function dList()
     {
-
+        $ddata = Db::table('distributor')->colunm('account,wxid,address,type,grade,name');
+        if($ddata){
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $ddata);
+        }else{
+            $data = array('status' => 1, 'msg' => '无代理商', 'data' => '');
+        }
+        return json($data);
     }
 
     public function rootList()
     {
-
+        $rootdata = Db::table('root')->colunm('acc,type');
+        if($rootdata){
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $rootdata);
+        }else{
+            $data = array('status' => 1, 'msg' => '后台管理账号', 'data' => '');
+        }
+        return json($data);
     }
 }

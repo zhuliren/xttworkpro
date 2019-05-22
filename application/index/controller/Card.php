@@ -148,6 +148,53 @@ class Card
         $page = $_REQUEST['page'];
         $start = $page * $limit;
         $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('acc,pwd,creat_time');
-        return json($selectgoods);
+        if ($selectgoods) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $selectgoods);
+        } else {
+            $data = array('status' => 1, 'msg' => '无卡券', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function cardListAll()
+    {
+        $limit = $_REQUEST['limit'];
+        $page = $_REQUEST['page'];
+        $start = $page * $limit;
+        $selectgoods = Db::table('card_')->limit($start, $limit)->column('acc,type,creat_time');
+        if ($selectgoods) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $selectgoods);
+        } else {
+            $data = array('status' => 1, 'msg' => '无卡券', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function actCardLot()
+    {
+        $did = $_REQUEST['did'];
+        $fcardacc = $_REQUEST['fcardacc'];
+        $lcardacc = $_REQUEST['lcardacc'];
+        //查询首卡id
+        $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
+        if ($fcarddata) {
+            $lcarddata = Db::table('card')->where('acc', $lcardacc)->find();
+            if ($lcarddata) {
+                $fid = $fcarddata['id'];
+                $lid = $lcarddata['id'];
+                if ($fid > $lid) {
+                    $data = array('status' => 1, 'msg' => '超出范围', 'data' => '');
+                } else {
+                    for ($i = $fid; $i < $lid; $i++) {
+
+                    }
+                }
+            } else {
+                $data = array('status' => 1, 'msg' => '末张卡券账号不存在', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '首张卡券账号不存在', 'data' => '');
+        }
+        return json($data);
     }
 }

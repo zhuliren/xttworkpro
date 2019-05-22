@@ -150,4 +150,15 @@ class Goods
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
     }
+
+    public function getGoodsD(){
+        $goods_id = $_REQUEST['goodsid'];
+        $goodsdata = Db::table('goods')->where('id',$goods_id)->find();
+        if($goodsdata){
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $goodsdata);
+        }else{
+            $data = array('status' => 1, 'msg' => '商品不存在', 'data' => '');
+        }
+        return json($data);
+    }
 }
