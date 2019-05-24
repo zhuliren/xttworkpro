@@ -59,6 +59,8 @@ Route::rule('actCard', 'index/Card/actCard');
 Route::rule('userGetCardInfo', 'index/Card/userGetCardInfo');
 Route::rule('cardList', 'index/Card/cardList');
 Route::rule('cardListAll', 'index/Card/cardListAll');
+Route::rule('actCardLot', 'index/Card/actCardLot');
+Route::rule('bindingCardLot', 'index/Card/bindingCardLot');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
@@ -76,3 +78,4 @@ Route::rule('rootLogin', 'index/Root/login');
 Route::rule('userList', 'index/Root/userList');
 Route::rule('dList', 'index/Root/dList');
 Route::rule('rootList', 'index/Root/rootList');
+Route::rule('qOrder', 'index/Root/qOrder');

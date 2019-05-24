@@ -28,7 +28,7 @@ class Root
             switch ($rootdata['type']) {
                 case 0:
                     //0、超级管理员
-                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理','后端管理员管理');
+                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理', '后端管理员管理');
                     break;
                 case 1:
                     // 1、运维账号
@@ -61,9 +61,9 @@ class Root
     public function userList()
     {
         $userdata = Db::table('user')->column('id,name,headimg,creattime');
-        if($userdata){
+        if ($userdata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $userdata);
-        }else{
+        } else {
             $data = array('status' => 1, 'msg' => '无用户', 'data' => '');
         }
         return json($data);
@@ -71,10 +71,10 @@ class Root
 
     public function dList()
     {
-        $ddata = Db::table('distributor')->colunm('account,wxid,address,type,grade,name');
-        if($ddata){
+        $ddata = Db::table('distributor')->column('id,account,wxid,address,type,grade,name,phone,due,lc,usedlc');
+        if ($ddata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $ddata);
-        }else{
+        } else {
             $data = array('status' => 1, 'msg' => '无代理商', 'data' => '');
         }
         return json($data);
@@ -82,11 +82,29 @@ class Root
 
     public function rootList()
     {
-        $rootdata = Db::table('root')->colunm('acc,type');
-        if($rootdata){
+        $rootdata = Db::table('root')->column('id,acc,type');
+        if ($rootdata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $rootdata);
-        }else{
-            $data = array('status' => 1, 'msg' => '后台管理账号', 'data' => '');
+        } else {
+            $data = array('status' => 1, 'msg' => '无后台管理账号', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function qOrder()
+    {
+        $rid = $_REQUEST['rid'];
+        $order_id = $_REQUEST['orderid'];
+        $orderdata = Db::table('order')->where('order_id', $order_id)->find();
+        if ($orderdata) {
+            if ($orderdata['ordertype'] == 2) {
+                Db::table('order')->where('order_id', $order_id)->update(['ordertype' => 3]);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+            } else {
+                $data = array('status' => 1, 'msg' => '订单状态错误', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '订单号错误', 'data' => '');
         }
         return json($data);
     }

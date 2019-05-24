@@ -56,6 +56,7 @@ class Lc
             } else {
                 $newusedlc = $usedlc - $amount;
                 Db::table('distributor')->where('id', $did)->update(['usedlc' => $newusedlc]);
+                Db::table('lc_history')->insert(['did' => $did, 'amount' => $amount, 'type' => 0, 'creattime' => date("Y-m-d H:i:s", time())]);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => '');
             }
         } else {
@@ -67,14 +68,11 @@ class Lc
     public function changeLc()
     {
         $did = $_REQUEST['did'];
+        $newlc = $_REQUEST['newlc'];
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
-            $lchdata = Db::table('lc_history')->where('did', $did)->column('amount,type,creattime');
-            if ($lchdata) {
-                $data = array('status' => 0, 'msg' => '成功', 'data' => $lchdata);
-            } else {
-                $data = array('status' => 1, 'msg' => '无使用授信记录', 'data' => '');
-            }
+            Db::table('distributor')->where('id', $did)->update(['lc' => $newlc]);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         } else {
             $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
         }
