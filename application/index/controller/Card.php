@@ -164,7 +164,7 @@ class Card
         $page = $_REQUEST['page'];
         $start = $page * $limit;
         $cardnum = Db::table('card')->count('id');
-        $selectgoods = Db::table('card')->limit($start, $limit)->column('acc,type,creat_time');
+        $selectgoods = Db::table('card')->limit($start, $limit)->column('id,acc,type,creat_time');
         if ($selectgoods) {
             $returndata = array('card_info' => $selectgoods, 'card_num' => $cardnum);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
@@ -244,5 +244,18 @@ class Card
             $data = array('status' => 1, 'msg' => '首张卡券账号不存在', 'data' => '');
         }
         return json($data);
+    }
+
+    public function delCardEInfoLot()
+    {
+        $rid = $_REQUEST['rid'];
+        $cardlotstring = $_REQUEST['cardlotstring'];
+        $cardlot = explode(",", $cardlotstring);
+        foreach ($cardlot as $item) {
+            Db::table('card_e_info')->where('id', $item)->delete();
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+
     }
 }

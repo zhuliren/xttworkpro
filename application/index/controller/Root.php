@@ -25,23 +25,17 @@ class Root
         $rootdata = Db::table('root')->where('acc', $acc)->where('pwd', $pwd)->find();
         if ($rootdata) {
             //匹配菜单
-            switch ($rootdata['type']) {
-                case 0:
-                    //0、超级管理员
-                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理', '后端管理员管理');
-                    break;
-                case 1:
-                    // 1、运维账号
-                    $menu = array('商品列表', '代理商列表', '卡券管理', '客户管理');
-                    break;
-                case 2:
-                    // 2、财务账号
-                    $menu = array('订单查看', '代理商授信恢复', '代理商授信修改');
-                    break;
-                case 3:
-                    // 3、仓管账号
-                    $menu = array('订单列表');
-                    break;
+            $menudata = Db::view('rootpathvk', 'roottype')
+                ->view('rootpath', 'id,path,name,component,redirect,leaf,menuShow,iconCls', 'rootpathvk.pathid=rootpath.id')
+                ->where('rootpathvk.roottype', $rootdata['type'])
+                ->select();
+            $menu = array();
+            //重组数据
+            foreach ($menudata as $item) {
+                $zpath = Db::table('rootzpath')->where('rootpathid', $item['id'])->column('path,component,name,menuShow');
+                $menu[] = array('path' => $item['path'], 'name' => $item['name'], 'component' => $item['component'],
+                    'redirect' => $item['redirect'], 'leaf' => $item['leaf'], 'menuShow' => $item['menuShow'],
+                    'iconCls' => $item['iconCls'], 'children' => $zpath);
             }
             $returndata = array('rid' => $rootdata['id'], 'type' => $rootdata['type'], 'menu' => $menu);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);

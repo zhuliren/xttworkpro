@@ -102,7 +102,7 @@ class DOrder
             ->where('order.order_id', $order_id)
             ->select();
         if ($orderdata) {
-            $orderdetailsdata = Db::view('order_details', 'goods_num')
+            $orderdetailsdata = Db::view('order_details', 'goods_size_id,goods_num')
                 ->view('goods_size', 'size,cost,price,card_price', 'order_details.goods_size_id=goods_size.id', 'LEFT')
                 ->view('goods', 'name,headimg', 'goods_size.goods_id=goods.id', 'LEFT')
                 ->where('order_details.order_id', $order_id)
