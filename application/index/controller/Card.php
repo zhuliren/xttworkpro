@@ -41,6 +41,54 @@ class Card
         return json($data);
     }
 
+    public function newCreatCard()
+    {
+        $num = $_REQUEST['num'];
+        $goodsid = $_REQUEST['goodsid'];
+        $gsid = $_REQUEST['gsid'];
+        if ($num > 300) {
+            $data = array('status' => 1, 'msg' => '单词创建请勿超过300张，防止系统卡顿', 'data' => '');
+        } else {
+            //密码包含规则
+            $rule = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+            //密码位数
+            $limit = 8;
+            //卡号第一位是品牌，第二第三位是产品编号，第四到第七位是型号，第八到第十二位是券号连号数列
+            $goodsdata = Db::table('goods')->where('id', $goodsid)->find();
+            $brandid = $goodsdata['brandid'];//品牌编号
+            $goodsno = $goodsdata['goodsno'];//产品编号
+            $goodssizedata = Db::table('goods_size')->where('id', $gsid)->find();
+            $modelid = $goodssizedata['modelid'];//型号
+            $acchead = $brandid . $goodsno . $modelid;
+            //初始卡券连号数列
+            $cardfnumdata = Db::table('cardnum')->where('gsid', $gsid)->find();
+            $cardfnum = $cardfnumdata['nownum'];
+            //先创建账号
+            for ($i = 0; $i < $num; $i++) {
+                //创建6位随机数密码 并加密
+                $rand = implode("", array_rand($rule, $limit));
+                $pwd = md5(md5($rand));
+                //生成卡编号 以id为主 11位
+                $accend = sprintf("%05d", $cardfnum);
+                $cardfnum++;
+                $acc = $acchead . $accend;
+                Db::table('card')->insert(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);
+                Db::table('card_e_info')->insert(['pwd' => $rand, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);
+                if ($i == 0) {
+                    $firstacc = $acc;
+                }
+                if ($i <= $num) {
+                    $lastacc = $acc;
+                }
+            }
+            //更新数量
+            Db::table('cardnum')->where('gsid', $gsid)->update(['nownum' => $cardfnum]);
+            $returndata = array('firstacc' => $firstacc, 'lastacc' => $lastacc, 'num' => $num);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        }
+        return json($data);
+    }
+
     public function getCardAccLikeLast()
     {
         $did = $_REQUEST['did'];
@@ -148,7 +196,7 @@ class Card
         $page = $_REQUEST['page'];
         $start = $page * $limit;
         $cardnum = Db::table('card_e_info')->count('id');
-        $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('acc,pwd,creat_time');
+        $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('id,acc,pwd,creat_time');
         if ($selectgoods) {
             $returndata = array('card_e_info' => $selectgoods, 'card_e_num' => $cardnum);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);

@@ -33,9 +33,13 @@ class Root
             //重组数据
             foreach ($menudata as $item) {
                 $zpath = Db::table('rootzpath')->where('rootpathid', $item['id'])->column('path,component,name,menuShow');
+                $children = array();
+                foreach ($zpath as $pathitem) {
+                    $children[] = $pathitem;
+                }
                 $menu[] = array('path' => $item['path'], 'name' => $item['name'], 'component' => $item['component'],
                     'redirect' => $item['redirect'], 'leaf' => $item['leaf'], 'menuShow' => $item['menuShow'],
-                    'iconCls' => $item['iconCls'], 'children' => $zpath);
+                    'iconCls' => $item['iconCls'], 'children' => $children);
             }
             $returndata = array('rid' => $rootdata['id'], 'type' => $rootdata['type'], 'menu' => $menu);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);

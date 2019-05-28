@@ -50,6 +50,46 @@ class Goods
         return json($data);
     }
 
+    public function newCreatGoods()
+    {
+        $name = $_REQUEST['name'];//商品名称
+        $headimg = $_REQUEST['headimg'];//商品头像
+        $introduce = $_REQUEST['introduce'];//商品简介
+        $details = $_REQUEST['details'];//商品详情富文本
+        $origin = $_REQUEST['origin'];//商品产地
+        $isonline = $_REQUEST['isonline'];//是否上线
+        $brandid = $_REQUEST['brandid'];//品牌编号
+        $goodsno = $_REQUEST['goodsno'];//产品编号
+        //查询是否存在同名产品
+        $goodsdata = Db::table('goods')->where('name', $name)->find();
+        if ($goodsdata) {
+            $goods_id = $goodsdata['id'];
+            $name = $goodsdata['name'];
+            $headimg = $goodsdata['headimg'];
+            $introduce = $goodsdata['introduce'];
+            $details = $goodsdata['details'];
+            $origin = $goodsdata['origin'];
+            $isonline = $goodsdata['isonline'];
+            $returndata = array(
+                'goodsid' => $goods_id,
+                'name' => $name,
+                'headimg' => $headimg,
+                'introduce' => $introduce,
+                'details' => $details,
+                'origin' => $origin,
+                'isonline' => $isonline
+            );
+            $data = array('status' => 1, 'msg' => '商品已存在', 'data' => $returndata);
+        } else {
+            $goods_id = Db::table('goods')
+                ->insertGetId(['name' => $name, 'headimg' => $headimg, 'introduce' => $introduce, 'details' => $details, 'origin' => $origin, 'isonline' => $isonline
+                    , 'brandid' => $brandid, 'goodsno' => $goodsno]);
+            $returndata = array('goodsid' => $goods_id);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        }
+        return json($data);
+    }
+
     public function addGoodsSize()
     {
         $goods_id = $_REQUEST['goodsid'];//商品id
@@ -57,7 +97,22 @@ class Goods
         $cost = $_REQUEST['cost'];//商品拿货价
         $price = $_REQUEST['price'];//商品建议售价
         $card_price = $_REQUEST['cardprice'];//商品券面价
-        $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price,'card_price'=>$card_price]);
+        $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price, 'card_price' => $card_price]);
+        $returndata = array('sizeid' => $size_id, 'goodsid' => $goods_id);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        return json($data);
+    }
+
+    public function newAddGoodsSize()
+    {
+        $goods_id = $_REQUEST['goodsid'];//商品id
+        $size = $_REQUEST['size'];//商品规格
+        $cost = $_REQUEST['cost'];//商品拿货价
+        $price = $_REQUEST['price'];//商品建议售价
+        $card_price = $_REQUEST['cardprice'];//商品券面价
+        $modelid = $_REQUEST['modelid'];//型号
+        $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price, 'card_price' => $card_price, 'modelid' => $modelid]);
+        Db::table('cardnum')->insert(['gsid'=>$size_id]);
         $returndata = array('sizeid' => $size_id, 'goodsid' => $goods_id);
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
@@ -88,7 +143,7 @@ class Goods
         $card_price = $_REQUEST['cardprice'];//商品券面价
         Db::table('goods_size')
             ->where('id', $size_id)
-            ->update(['size' => $size, 'cost' => $cost, 'price' => $price,'card_price'=>$card_price]);
+            ->update(['size' => $size, 'cost' => $cost, 'price' => $price, 'card_price' => $card_price]);
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         return json($data);
     }
@@ -151,12 +206,13 @@ class Goods
         return json($data);
     }
 
-    public function getGoodsD(){
+    public function getGoodsD()
+    {
         $goods_id = $_REQUEST['goodsid'];
-        $goodsdata = Db::table('goods')->where('id',$goods_id)->find();
-        if($goodsdata){
+        $goodsdata = Db::table('goods')->where('id', $goods_id)->find();
+        if ($goodsdata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $goodsdata);
-        }else{
+        } else {
             $data = array('status' => 1, 'msg' => '商品不存在', 'data' => '');
         }
         return json($data);

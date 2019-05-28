@@ -18,6 +18,17 @@ class DOrder
         $did = $_REQUEST['did'];
         $pay_type = $_REQUEST['paytype'];//支付方式  0、现金支付 1、授信支付
         $iscard = $_REQUEST['iscard'];//0、卡券1、现货
+        //判断是否可以使用授信支付
+        if ($pay_type == 1) {
+            $lctermdata = Db::table('lcterm')->where('id', 1)->find();
+            if ($lctermdata) {
+                $now = date("Y-m-d", time());
+                if ($now > $lctermdata['lcstart'] && $now < $lctermdata['lcend']) {
+                    $data = array('status' => 1, 'msg' => '目前无法使用授信支付', 'data' => '');
+                    return json($data);
+                }
+            }
+        }
         //判断订单类型 若为门店并使用现金支付则需要区域确认，其他情况均为财务确认
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
@@ -97,8 +108,8 @@ class DOrder
     public function dOrderDetails()
     {
         $order_id = $_REQUEST['orderid'];
-        $orderdata = Db::view('order','order_id,creat_time,paytype,ordertype,payprice,iscard')
-            ->view('distributor','name,phone,address','order.did=distributor.id')
+        $orderdata = Db::view('order', 'order_id,creat_time,paytype,ordertype,payprice,iscard')
+            ->view('distributor', 'name,phone,address', 'order.did=distributor.id')
             ->where('order.order_id', $order_id)
             ->select();
         if ($orderdata) {

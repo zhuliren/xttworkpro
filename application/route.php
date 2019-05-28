@@ -26,6 +26,8 @@ Route::rule('getGoosList', 'index/Goods/getGoosList');
 Route::rule('getGoodsSize', 'index/Goods/getGoodsSize');
 Route::rule('getGoodsListWithSize', 'index/Goods/getGoodsListWithSize');
 Route::rule('getGoodsD', 'index/Goods/getGoodsD');
+Route::rule('newCreatGoods', 'index/Goods/newCreatGoods');
+Route::rule('newAddGoodsSize', 'index/Goods/newAddGoodsSize');
 
 //代理商模块
 Route::rule('distributorInfo', 'index/Distributor/distributorInfo');
@@ -62,6 +64,7 @@ Route::rule('cardListAll', 'index/Card/cardListAll');
 Route::rule('actCardLot', 'index/Card/actCardLot');
 Route::rule('bindingCardLot', 'index/Card/bindingCardLot');
 Route::rule('delCardEInfoLot', 'index/Card/delCardEInfoLot');
+Route::rule('newCreatCard', 'index/Card/newCreatCard');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
