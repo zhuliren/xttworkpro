@@ -65,6 +65,9 @@ Route::rule('actCardLot', 'index/Card/actCardLot');
 Route::rule('bindingCardLot', 'index/Card/bindingCardLot');
 Route::rule('delCardEInfoLot', 'index/Card/delCardEInfoLot');
 Route::rule('newCreatCard', 'index/Card/newCreatCard');
+Route::rule('getCardType', 'index/Card/getCardType');
+Route::rule('setCardType', 'index/Card/setCardType');
+Route::rule('delCardType', 'index/Card/delCardType');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');

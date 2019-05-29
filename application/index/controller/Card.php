@@ -41,9 +41,43 @@ class Card
         return json($data);
     }
 
+    public function getCardType()
+    {
+        $cardtypedata = Db::table('cardtype')->column(['id,name,no']);
+        if ($cardtypedata) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $cardtypedata);
+        } else {
+            $data = array('status' => 1, 'msg' => '无信息', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function setCardType()
+    {
+        $name = $_REQUEST['name'];
+        $no = $_REQUEST['no'];
+        $cardtypeid = Db::table('cardtype')->insertGetId(['name' => $name, 'no' => $no]);
+        if ($cardtypeid) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => array('cardtypeid' => $cardtypeid));
+        } else {
+            $data = array('status' => 1, 'msg' => '失败', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function delCardType()
+    {
+        $id = $_REQUEST['id'];
+        Db::table('cardtype')->where('id', $id)->delete();
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+    }
+
     public function newCreatCard()
     {
+        $rid = $_REQUEST['rid'];
         $num = $_REQUEST['num'];
+        $cardtype = $_REQUEST['typeid'];
         $goodsid = $_REQUEST['goodsid'];
         $gsid = $_REQUEST['gsid'];
         if ($num > 300) {
@@ -54,11 +88,12 @@ class Card
             //密码位数
             $limit = 8;
             //卡号第一位是品牌，第二第三位是产品编号，第四到第七位是型号，第八到第十二位是券号连号数列
+            $cardtypedata = Db::table('cardtype')->where('id', $cardtype)->find();
+            $brandid = $cardtypedata['no'];//品牌编号
             $goodsdata = Db::table('goods')->where('id', $goodsid)->find();
-            $brandid = $goodsdata['brandid'];//品牌编号
-            $goodsno = $goodsdata['goodsno'];//产品编号
+            $goodsno = sprintf("%02d", $goodsdata['goodsno']);//产品编号
             $goodssizedata = Db::table('goods_size')->where('id', $gsid)->find();
-            $modelid = $goodssizedata['modelid'];//型号
+            $modelid = sprintf("%04d", $goodssizedata['modelid']);//券号
             $acchead = $brandid . $goodsno . $modelid;
             //初始卡券连号数列
             $cardfnumdata = Db::table('cardnum')->where('gsid', $gsid)->find();
@@ -69,7 +104,7 @@ class Card
                 $rand = implode("", array_rand($rule, $limit));
                 $pwd = md5(md5($rand));
                 //生成卡编号 以id为主 11位
-                $accend = sprintf("%05d", $cardfnum);
+                $accend = sprintf("%06d", $cardfnum);
                 $cardfnum++;
                 $acc = $acchead . $accend;
                 Db::table('card')->insert(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);

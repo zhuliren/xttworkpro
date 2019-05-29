@@ -58,7 +58,6 @@ class Goods
         $details = $_REQUEST['details'];//商品详情富文本
         $origin = $_REQUEST['origin'];//商品产地
         $isonline = $_REQUEST['isonline'];//是否上线
-        $brandid = $_REQUEST['brandid'];//品牌编号
         $goodsno = $_REQUEST['goodsno'];//产品编号
         //查询是否存在同名产品
         $goodsdata = Db::table('goods')->where('name', $name)->find();
@@ -82,8 +81,7 @@ class Goods
             $data = array('status' => 1, 'msg' => '商品已存在', 'data' => $returndata);
         } else {
             $goods_id = Db::table('goods')
-                ->insertGetId(['name' => $name, 'headimg' => $headimg, 'introduce' => $introduce, 'details' => $details, 'origin' => $origin, 'isonline' => $isonline
-                    , 'brandid' => $brandid, 'goodsno' => $goodsno]);
+                ->insertGetId(['name' => $name, 'headimg' => $headimg, 'introduce' => $introduce, 'details' => $details, 'origin' => $origin, 'isonline' => $isonline, 'goodsno' => $goodsno]);
             $returndata = array('goodsid' => $goods_id);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         }
@@ -112,7 +110,7 @@ class Goods
         $card_price = $_REQUEST['cardprice'];//商品券面价
         $modelid = $_REQUEST['modelid'];//型号
         $size_id = Db::table('goods_size')->insertGetId(['goods_id' => $goods_id, 'size' => $size, 'cost' => $cost, 'price' => $price, 'card_price' => $card_price, 'modelid' => $modelid]);
-        Db::table('cardnum')->insert(['gsid'=>$size_id]);
+        Db::table('cardnum')->insert(['gsid' => $size_id]);
         $returndata = array('sizeid' => $size_id, 'goodsid' => $goods_id);
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
