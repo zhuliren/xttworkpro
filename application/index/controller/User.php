@@ -102,5 +102,8 @@ class User
         $user_id = $_REQUEST['userid'];
         $name = $_REQUEST['name'];
         $headimg = $_REQUEST['headimg'];
+        Db::table('user')->where('id', $user_id)->update(['name' => $name, 'headimg' => $headimg]);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
     }
 }

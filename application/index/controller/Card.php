@@ -339,6 +339,30 @@ class Card
         }
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         return json($data);
+    }
 
+    public function getCardAllInfo()
+    {
+        $did = $_REQUEST['did'];
+        $acc = $_REQUEST['acc'];
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            $carddata = Db::view('card', 'acc,type,creat_time,binding_time,act_time,used_time')
+                ->view('root', 'acc as racc', 'card.rid=root.id', 'LEFT')
+                ->view('distributor', 'name as dname,type as dtype,grade as dgrade', 'card.rid=distributor.id', 'LEFT')
+                ->view('user', 'name as uname', 'card.user_id=user.id', 'LEFT')
+                ->view('goods_size', 'size as gsize,modelid', 'card.gsid=goods_size.id', 'LEFT')
+                ->view('goods', 'name as gname,goodsno', 'goods_size.goods_id=goods.id', 'RIGHT')
+                ->where('card.acc', $acc)
+                ->select();
+            if ($carddata) {
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $carddata);
+            } else {
+                $data = array('status' => 1, 'msg' => '账号错误', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '无权限查看', 'data' => '');
+        }
+        return json($data);
     }
 }

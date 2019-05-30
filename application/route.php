@@ -14,6 +14,7 @@ use think\Route;
 //用户模块
 Route::rule('wxlogin', 'index/User/wxlogin');
 Route::rule('login', 'index/User/login');
+Route::rule('intoUserInfo', 'index/User/intoUserInfo');
 
 //商品模块
 Route::rule('creatGoods', 'index/Goods/creatGoods');
@@ -68,6 +69,7 @@ Route::rule('newCreatCard', 'index/Card/newCreatCard');
 Route::rule('getCardType', 'index/Card/getCardType');
 Route::rule('setCardType', 'index/Card/setCardType');
 Route::rule('delCardType', 'index/Card/delCardType');
+Route::rule('getCardAllInfo', 'index/Card/getCardAllInfo');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
