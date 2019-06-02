@@ -24,7 +24,8 @@ class UserOrder
                     //修改卡券状态
                     Db::table('card')->where('acc', $acc)->update(['type' => 3, 'user_id' => $user_id, 'used_time' => date("Y-m-d H:i:s", time())]);
                     //插入用户订单表
-                    Db::table('user_order')->insert(['user_id' => $user_id, 'user_id' => $user_id, 'card_id' => $acc, 'name' => $name, 'phone' => $phone, 'address' => $address]);
+                    Db::table('user_order')->insert(['user_id' => $user_id, 'user_id' => $user_id, 'card_id' => $acc, 'name' => $name,
+                        'phone' => $phone, 'address' => $address, 'creat_time' => date("Y-m-d H:i:s", time())]);
                     $data = array('status' => 0, 'msg' => '成功', 'data' => '');
                     //将用户归入该代理商渠道下
                     $userdata = Db::table('user')->where('id', $user_id)->find();

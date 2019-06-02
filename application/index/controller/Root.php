@@ -4,6 +4,7 @@
 namespace app\index\controller;
 
 
+use app\index\model\BasicOperation;
 use think\Db;
 
 class Root
@@ -58,9 +59,18 @@ class Root
 
     public function userList()
     {
+        $sort_key = $_REQUEST['sort_key'];
+        $operation = new BasicOperation();
         $userdata = Db::table('user')->column('id,name,headimg,creattime');
         if ($userdata) {
-            $data = array('status' => 0, 'msg' => '成功', 'data' => $userdata);
+            //重组数据
+            $returndata = array();
+            foreach ($userdata as $item) {
+                $ordernum = Db::table('user_order')->where('user_id', $item['id'])->count('id');
+                $returndata[] = array('id' => $item['id'], 'name' => $item['name'], 'headimg' => $item['headimg'], 'creattime' => $item['creattime'], 'ordernum' => $ordernum);
+            }
+            $returndata = $operation->my_sort($returndata, $sort_key, SORT_DESC);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         } else {
             $data = array('status' => 1, 'msg' => '无用户', 'data' => '');
         }
@@ -69,9 +79,12 @@ class Root
 
     public function dList()
     {
+        $sort_key = $_REQUEST['sort_key'];
+        $operation = new BasicOperation();
         $ddata = Db::table('distributor')->column('id,account,wxid,address,type,grade,name,phone,due,lc,usedlc');
         if ($ddata) {
-            $data = array('status' => 0, 'msg' => '成功', 'data' => $ddata);
+            $returndata = $operation->my_sort($ddata, $sort_key, SORT_DESC);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         } else {
             $data = array('status' => 1, 'msg' => '无代理商', 'data' => '');
         }
@@ -103,6 +116,71 @@ class Root
             }
         } else {
             $data = array('status' => 1, 'msg' => '订单号错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function allOrderList()
+    {
+        $startdate = $_REQUEST['startdate'];
+        $enddate = $_REQUEST['enddate'];
+        $type = $_REQUEST['type'];//0.全部 1.卡券 2.现货 3.用户提货
+        $sort_key = $_REQUEST['sort_key'];
+        $limit = $_REQUEST['limit'];
+        $page = $_REQUEST['page'];
+        $start = $page * $limit;
+        $operation = new BasicOperation();
+        //判断查看类型
+        if ($type == 0) {
+            $datanum = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])->count();
+            $returndata = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])
+                ->limit($start, $limit)
+                ->column('order_id,did,creat_time,paytype,ordertype,payprice,iscard');
+            if ($returndata) {
+                $returndata = $operation->my_sort($returndata, $sort_key, SORT_DESC);
+                $alldata = array('list' => $returndata, 'num' => $datanum);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $alldata);
+            } else {
+                $data = array('status' => 1, 'msg' => '无订单', 'data' => '');
+            }
+        } else if ($type == 1) {
+            $datanum = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])->where('iscard', 0)->count();
+            $returndata = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])
+                ->where('iscard', 0)
+                ->limit($start, $limit)
+                ->column('order_id,did,creat_time,paytype,ordertype,payprice,iscard');
+            if ($returndata) {
+                $returndata = $operation->my_sort($returndata, $sort_key, SORT_DESC);
+                $alldata = array('list' => $returndata, 'num' => $datanum);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $alldata);
+            } else {
+                $data = array('status' => 1, 'msg' => '无订单', 'data' => '');
+            }
+        } else if ($type == 2) {
+            $datanum = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])->where('iscard', 1)->count();
+            $returndata = Db::table('order')->where('creat_time', 'between time', [$startdate, $enddate])
+                ->where('iscard', 1)
+                ->limit($start, $limit)
+                ->column('order_id,did,creat_time,paytype,ordertype,payprice,iscard');
+            if ($returndata) {
+                $returndata = $operation->my_sort($returndata, $sort_key, SORT_DESC);
+                $alldata = array('list' => $returndata, 'num' => $datanum);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $alldata);
+            } else {
+                $data = array('status' => 1, 'msg' => '无订单', 'data' => '');
+            }
+        } else if ($type == 3) {
+            $datanum = Db::table('user_order')->where('creat_time', 'between time', [$startdate, $enddate])->count();
+            $returndata = Db::table('user_order')->where('creat_time', 'between time', [$startdate, $enddate])
+                ->limit($start, $limit)
+                ->column('user_id,card_id,name,phone,address,creat_time');
+            if ($returndata) {
+                $returndata = $operation->my_sort($returndata, $sort_key, SORT_DESC);
+                $alldata = array('list' => $returndata, 'num' => $datanum);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $alldata);
+            } else {
+                $data = array('status' => 1, 'msg' => '无订单', 'data' => '');
+            }
         }
         return json($data);
     }

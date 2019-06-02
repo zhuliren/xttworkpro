@@ -88,3 +88,4 @@ Route::rule('userList', 'index/Root/userList');
 Route::rule('dList', 'index/Root/dList');
 Route::rule('rootList', 'index/Root/rootList');
 Route::rule('qOrder', 'index/Root/qOrder');
+Route::rule('allOrderList', 'index/Root/allOrderList');

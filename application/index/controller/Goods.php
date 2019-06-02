@@ -169,9 +169,11 @@ class Goods
         $limit = $_REQUEST['limit'];
         $page = $_REQUEST['page'];
         $start = $page * $limit;
+        $datanum = Db::table('goods')->count();
         $goodslistdata = Db::table('goods')->limit($start, $limit)
             ->column('id,name,headimg,introduce,origin,isonline');
-        $data = array('status' => 0, 'msg' => '成功', 'data' => $goodslistdata);
+        $alldata = array('list' => $goodslistdata, 'num' => $datanum);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $alldata);
         return json($data);
     }
 
