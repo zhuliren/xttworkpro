@@ -123,4 +123,26 @@ class ShopCar
         }
         return json($data);
     }
+
+    public function changeGoodsNum()
+    {
+        $did = $_REQUEST['did'];
+        $goods_size_id = $_REQUEST['gsid'];
+        $num = $_REQUEST['num'];
+        //判断购物车是否存在该商品
+        $shopcardata = Db::table('shopcar')->where('did', $did)->where('goods_size_id', $goods_size_id)->find();
+        if ($shopcardata) {
+            $shopcarid = $shopcardata['id'];
+            if ($num <= 0) {
+                Db::table('shopcar')->delete($shopcarid);
+                $data = array('status' => 0, 'msg' => '该规格已删除', 'data' => '');
+            } else {
+                Db::table('shopcar')->where('id', $shopcarid)->update(['num' => $num]);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '该规格不存在', 'data' => '');
+        }
+        return json($data);
+    }
 }

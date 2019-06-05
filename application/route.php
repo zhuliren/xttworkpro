@@ -45,6 +45,7 @@ Route::rule('delCarGoods', 'index/ShopCar/delGoods');
 Route::rule('updCarGoodsNum', 'index/ShopCar/updGoodsNum');
 Route::rule('showShopCar', 'index/ShopCar/showShopCar');
 Route::rule('updCarGoodsChoose', 'index/ShopCar/updGoodsChoose');
+Route::rule('changeGoodsNum', 'index/ShopCar/changeGoodsNum');
 
 //代理商订单模块
 Route::rule('creatDOrder', 'index/DOrder/creatDOrder');

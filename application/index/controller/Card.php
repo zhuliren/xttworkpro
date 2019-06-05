@@ -8,39 +8,6 @@ use think\Db;
 
 class Card
 {
-    public function creatCard()
-    {
-        $num = $_REQUEST['num'];
-        if ($num > 300) {
-            $data = array('status' => 1, 'msg' => '单词创建请勿超过300张，防止系统卡顿', 'data' => '');
-        } else {
-            //密码包含规则
-            $rule = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
-            //密码位数
-            $limit = 8;
-            //先创建账号
-            for ($i = 0; $i < $num; $i++) {
-                //创建6位随机数密码 并加密
-                $rand = implode("", array_rand($rule, $limit));
-                $pwd = md5(md5($rand));
-                $cardid = Db::table('card')->insertGetId(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time())]);
-                //生成卡编号 以id为主 11位
-                $acc = sprintf("%011d", $cardid);
-                Db::table('card')->where('id', $cardid)->update(['acc' => $acc]);
-                Db::table('card_e_info')->insert(['pwd' => $rand, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);
-                if ($i == 0) {
-                    $firstacc = $acc;
-                }
-                if ($i <= $num) {
-                    $lastacc = $acc;
-                }
-            }
-            $returndata = array('firstacc' => $firstacc, 'lastacc' => $lastacc, 'num' => $num);
-            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
-        }
-        return json($data);
-    }
-
     public function getCardType()
     {
         $cardtypedata = Db::table('cardtype')->column(['id,name,no']);
@@ -80,11 +47,9 @@ class Card
         $cardtype = $_REQUEST['typeid'];
         $goodsid = $_REQUEST['goodsid'];
         $gsid = $_REQUEST['gsid'];
-        if ($num > 300) {
-            $data = array('status' => 1, 'msg' => '单词创建请勿超过300张，防止系统卡顿', 'data' => '');
+        if ($num > 10000) {
+            $data = array('status' => 1, 'msg' => '单词创建请勿超过10000张，防止系统卡顿', 'data' => '');
         } else {
-            //密码包含规则
-            $rule = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
             //密码位数
             $limit = 8;
             //卡号第一位是品牌，第二第三位是产品编号，第四到第七位是型号，第八到第十二位是券号连号数列
@@ -101,14 +66,14 @@ class Card
             //先创建账号
             for ($i = 0; $i < $num; $i++) {
                 //创建6位随机数密码 并加密
-                $rand = implode("", array_rand($rule, $limit));
+                $rand = substr(rand(100000000, 9999999999), 1, $limit);
                 $pwd = md5(md5($rand));
                 //生成卡编号 以id为主 11位
                 $accend = sprintf("%06d", $cardfnum);
                 $cardfnum++;
                 $acc = $acchead . $accend;
-                Db::table('card')->insert(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);
-                Db::table('card_e_info')->insert(['pwd' => $rand, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc]);
+                Db::table('card')->insert(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc, 'no' => $brandid, 'goodsno' => $goodsno, 'modelid' => $modelid]);
+                Db::table('card_e_info')->insert(['pwd' => $rand, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc, 'no' => $brandid, 'goodsno' => $goodsno, 'modelid' => $modelid]);
                 if ($i == 0) {
                     $firstacc = $acc;
                 }
@@ -167,6 +132,7 @@ class Card
         $did = $_REQUEST['did'];
         $gsid = $_REQUEST['gsid'];
         $acc = $_REQUEST['acc'];
+        $orderid = $_REQUEST['orderid'];
         //查询卡券是否存在
         $carddata = Db::table('card')->where('acc', $acc)->find();
         if ($carddata) {
@@ -231,7 +197,7 @@ class Card
         $page = $_REQUEST['page'];
         $start = $page * $limit;
         $cardnum = Db::table('card_e_info')->count('id');
-        $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('id,acc,pwd,creat_time');
+        $selectgoods = Db::table('card_e_info')->limit($start, $limit)->column('id,acc,pwd,creat_time,no,goodsno,modelid');
         if ($selectgoods) {
             $returndata = array('card_e_info' => $selectgoods, 'card_e_num' => $cardnum);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
@@ -247,7 +213,7 @@ class Card
         $page = $_REQUEST['page'];
         $start = $page * $limit;
         $cardnum = Db::table('card')->count('id');
-        $selectgoods = Db::table('card')->limit($start, $limit)->column('id,acc,type,creat_time');
+        $selectgoods = Db::table('card')->limit($start, $limit)->column('id,acc,type,creat_time,no,goodsno,modelid');
         if ($selectgoods) {
             $returndata = array('card_info' => $selectgoods, 'card_num' => $cardnum);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
@@ -299,6 +265,7 @@ class Card
         $gsid = $_REQUEST['gsid'];
         $fcardacc = $_REQUEST['fcardacc'];
         $lcardacc = $_REQUEST['lcardacc'];
+        $orderid = $_REQUEST['orderid'];
         //查询首卡id
         $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
         if ($fcarddata) {
@@ -347,7 +314,7 @@ class Card
         $acc = $_REQUEST['acc'];
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
-            $carddata = Db::view('card', 'acc,type,creat_time,binding_time,act_time,used_time')
+            $carddata = Db::view('card', 'acc,type,creat_time,binding_time,act_time,used_time,no,goodsno,modelid')
                 ->view('root', 'acc as racc', 'card.rid=root.id', 'LEFT')
                 ->view('distributor', 'name as dname,type as dtype,grade as dgrade', 'card.rid=distributor.id', 'LEFT')
                 ->view('user', 'name as uname', 'card.user_id=user.id', 'LEFT')
