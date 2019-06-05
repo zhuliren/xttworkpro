@@ -133,18 +133,33 @@ class Card
         $gsid = $_REQUEST['gsid'];
         $acc = $_REQUEST['acc'];
         $orderid = $_REQUEST['orderid'];
-        //查询卡券是否存在
-        $carddata = Db::table('card')->where('acc', $acc)->find();
-        if ($carddata) {
-            $type = $carddata['type'];
-            if ($type == 0) {
-                Db::table('card')->where('acc', $acc)->update(['rid' => $rid, 'did' => $did, 'binding_time' => date("Y-m-d H:i:s", time()), 'gsid' => $gsid, 'type' => 1]);
-                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
-            } else {
-                $data = array('status' => 1, 'msg' => '卡券已出库', 'data' => '');
+        //查询订单该规格是否已出仓全部卡券
+        $oddata = Db::table('order_details')->where('goods_size_id',$gsid)->where('order_id',$orderid)->find();
+        if($oddata){
+            $goodsnum =  $oddata['goods_num'];
+            $bindingnum =  $oddata['binding_num'];
+            $ddid =  $oddata['id'];
+            if($bindingnum<$goodsnum){
+                //查询卡券是否存在
+                $carddata = Db::table('card')->where('acc', $acc)->find();
+                if ($carddata) {
+                    $type = $carddata['type'];
+                    if ($type == 0) {
+                        Db::table('card')->where('acc', $acc)->update(['rid' => $rid, 'did' => $did, 'binding_time' => date("Y-m-d H:i:s", time()), 'gsid' => $gsid, 'type' => 1]);
+                        $newbindingnum = $bindingnum+1;
+                        Db::table('order_details')->where('id',$ddid)->update(['binding_num'=>$newbindingnum]);
+                        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+                    } else {
+                        $data = array('status' => 1, 'msg' => '卡券已出库', 'data' => '');
+                    }
+                } else {
+                    $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
+                }
+            }else{
+                $data = array('status' => 1, 'msg' => '已出仓完毕', 'data' => '');
             }
-        } else {
-            $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
+        }else{
+            $data = array('status' => 1, 'msg' => '订单信息错误', 'data' => '');
         }
         return json($data);
     }
@@ -266,6 +281,20 @@ class Card
         $fcardacc = $_REQUEST['fcardacc'];
         $lcardacc = $_REQUEST['lcardacc'];
         $orderid = $_REQUEST['orderid'];
+        //查询订单该规格是否已出仓全部卡券
+        $oddata = Db::table('order_details')->where('goods_size_id',$gsid)->where('order_id',$orderid)->find();
+        if($oddata) {
+            $goodsnum = $oddata['goods_num'];
+            $bindingnum = $oddata['binding_num'];
+            $ddid = $oddata['id'];
+            if ($bindingnum >= $goodsnum) {
+                $data = array('status' => 1, 'msg' => '卡券已全部出仓', 'data' => '');
+                return $data;
+            }
+        }else{
+            $data = array('status' => 1, 'msg' => '订单信息错误', 'data' => '');
+            return $data;
+        }
         //查询首卡id
         $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
         if ($fcarddata) {
@@ -276,12 +305,21 @@ class Card
                 if ($fid > $lid) {
                     $data = array('status' => 1, 'msg' => '超出范围', 'data' => '');
                 } else {
+                    $nownum = 0;
                     for ($i = $fid; $i < $lid; $i++) {
                         $carddata = Db::table('card')->where('id', $i)->find();
                         if ($carddata) {
                             $type = $carddata['type'];
                             if ($type == 0) {
                                 Db::table('card')->where('id', $i)->update(['rid' => $rid, 'did' => $did, 'binding_time' => date("Y-m-d H:i:s", time()), 'gsid' => $gsid, 'type' => 1]);
+                                $nownum ++;
+                                $newbindingnum = $bindingnum+1;
+                                if($newbindingnum<=$goodsnum){
+                                    Db::table('order_details')->where('id',$ddid)->update(['binding_num'=>$newbindingnum]);
+                                }else{
+                                    $data = array('status' => 1, 'msg' => '已出仓'.$nownum.'张卡券，全部出仓完毕', 'data' => '');
+                                    return $data;
+                                }
                                 $data = array('status' => 0, 'msg' => '成功', 'data' => '');
                             }
                         }
