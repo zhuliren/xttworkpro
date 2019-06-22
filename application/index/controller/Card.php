@@ -123,10 +123,10 @@ class Card
                 $cardfnum++;
                 $acc = $acchead . $accend;
                 Db::table('card_info')->insert(['pwd' => $pwd, 'creat_time' => date("Y-m-d H:i:s", time()), 'acc' => $acc, 'no' => $brandid, 'goodsno' => $goodsno, 'modelid' => $modelid,'pwdinfo' => $rand]);
-                if ($i == 0) {
+                if ($i == $startnum) {
                     $firstacc = $acc;
                 }
-                if ($i <= $num) {
+                if ($i <= $endum) {
                     $lastacc = $acc;
                 }
             }
