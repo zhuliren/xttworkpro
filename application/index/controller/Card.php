@@ -118,7 +118,7 @@ class Card
                 //创建6位随机数密码 并加密
                 $rand = substr(rand(100000000, 9999999999), 1, $limit);
                 $pwd = md5(md5($rand));
-                //生成卡编号 以id为主 11位
+                //生成卡编号 以id为主 11位 
                 $accend = sprintf("%06d", $i);
                 $cardfnum++;
                 $acc = $acchead . $accend;
