@@ -71,6 +71,7 @@ Route::rule('getCardType', 'index/Card/getCardType');
 Route::rule('setCardType', 'index/Card/setCardType');
 Route::rule('delCardType', 'index/Card/delCardType');
 Route::rule('getCardAllInfo', 'index/Card/getCardAllInfo');
+Route::rule('creatCardByNum', 'index/Card/creatCardByNum');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');
