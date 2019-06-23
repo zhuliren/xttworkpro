@@ -23,6 +23,8 @@ class Distributor
         $name = $_REQUEST['name'];
         $phone = $_REQUEST['phone'];
         $due = $_REQUEST['due'];
+        $discount = $_REQUEST['discount'];//拿货折扣
+        $remarks = $_REQUEST['remarks'];//代理商备注
         $lc = 0;
         switch ($grade) {
             case 1:
@@ -52,7 +54,10 @@ class Distributor
         }
         $did = Db::table('distributor')->insertGetId(['account' => $account,
             'password' => $password, 'address' => $address, 'type' => $type,
-            'grade' => $grade, 'name' => $name, 'phone' => $phone, 'due' => $due, 'lc' => $lc, 'usedlc' => 0]);
+            'grade' => $grade, 'name' => $name, 'phone' => $phone, 'due' => $due, 'lc' => $lc, 'usedlc' => 0,
+            'discount' => $discount, 'remarks' => $remarks]);
+        //创建代理商钱包
+        Db::table('wallet')->insert(['did' => $did]);
         $returndata = array('did' => $did);
         $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
@@ -65,8 +70,9 @@ class Distributor
         $name = $_REQUEST['name'];
         $phone = $_REQUEST['phone'];
         $due = $_REQUEST['due'];
+        $discount = $_REQUEST['discount'];//拿货折扣
         Db::table('distributor')->where('id', $did)->update(['address' => $address,
-            'name' => $name, 'phone' => $phone, 'due' => $due,]);
+            'name' => $name, 'phone' => $phone, 'due' => $due, 'discount' => $discount]);
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         return json($data);
     }
@@ -207,6 +213,47 @@ class Distributor
             $address = $distributordata['address'];
             $returndata = array('name' => $name, 'phone' => $phone, 'address' => $address);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function addBalance()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $amount = $_REQUEST['amount'];
+        $type = $_REQUEST['type'];//1:预充值 2:装修补贴 3:赠券
+        $walletdata = Db::table('wallet')->where('did', $did)->find();
+        if ($walletdata) {
+            $ad_payment = $walletdata['ad_payment'];
+            $subsidy = $walletdata['subsidy'];
+            $coupon = $walletdata['coupon'];
+            switch ($type) {
+                case 1:
+                    $ad_payment = $ad_payment + $amount;
+                    break;
+                case 2:
+                    $subsidy = $subsidy + $amount;
+                    break;
+                case 3:
+                    $coupon = $coupon + $amount;
+                    break;
+            }
+            Db::table('wallet')->where('did', $did)->update(['ad_payment' => $ad_payment, 'subsidy' => $subsidy, 'coupon' => $coupon]);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function showBalance(){
+        $did = $_REQUEST['did'];
+        $walletdata = Db::table('wallet')->where('did', $did)->find();
+        if ($walletdata) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $walletdata);
         } else {
             $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
         }

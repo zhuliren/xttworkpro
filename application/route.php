@@ -17,8 +17,6 @@ Route::rule('login', 'index/User/login');
 Route::rule('intoUserInfo', 'index/User/intoUserInfo');
 
 //商品模块
-Route::rule('creatGoods', 'index/Goods/creatGoods');
-Route::rule('addGoodsSize', 'index/Goods/addGoodsSize');
 Route::rule('updGoodsInfo', 'index/Goods/updGoodsInfo');
 Route::rule('updGoodsSize', 'index/Goods/updGoodsSize');
 Route::rule('delGoods', 'index/Goods/delGoods');
@@ -29,6 +27,8 @@ Route::rule('getGoodsListWithSize', 'index/Goods/getGoodsListWithSize');
 Route::rule('getGoodsD', 'index/Goods/getGoodsD');
 Route::rule('newCreatGoods', 'index/Goods/newCreatGoods');
 Route::rule('newAddGoodsSize', 'index/Goods/newAddGoodsSize');
+Route::rule('getNewGoodsSize', 'index/Goods/getNewGoodsSize');
+Route::rule('getNewGoodsListWithSize', 'index/Goods/getNewGoodsListWithSize');
 
 //代理商模块
 Route::rule('distributorInfo', 'index/Distributor/distributorInfo');
@@ -38,6 +38,8 @@ Route::rule('updDistributorPwd', 'index/Distributor/updDistributorPwd');
 Route::rule('setMyshop', 'index/Distributor/setMyshop');
 Route::rule('showMyShop', 'index/Distributor/showMyShop');
 Route::rule('getRequstOrderInfo', 'index/Distributor/getRequstOrderInfo');
+Route::rule('addBalance', 'index/Distributor/addBalance');
+Route::rule('showBalance', 'index/Distributor/showBalance');
 
 //代理商购物车模块
 Route::rule('addCarGoods', 'index/ShopCar/addGoods');
@@ -53,6 +55,7 @@ Route::rule('myShopOrderList', 'index/DOrder/myShopOrderList');
 Route::rule('dOrderDetails', 'index/DOrder/dOrderDetails');
 Route::rule('dConfirmOrder', 'index/DOrder/dConfirmOrder');
 Route::rule('myDOrderList', 'index/DOrder/myOrderList');
+Route::rule('creatNewDOrder', 'index/DOrder/creatNewDOrder');
 
 //卡券模块
 Route::rule('creatCard', 'index/Card/creatCard');
@@ -61,17 +64,16 @@ Route::rule('getCardInfo', 'index/Card/getCardInfo');
 Route::rule('bindingCard', 'index/Card/bindingCard');
 Route::rule('actCard', 'index/Card/actCard');
 Route::rule('userGetCardInfo', 'index/Card/userGetCardInfo');
-Route::rule('cardList', 'index/Card/cardList');
 Route::rule('cardListAll', 'index/Card/cardListAll');
 Route::rule('actCardLot', 'index/Card/actCardLot');
 Route::rule('bindingCardLot', 'index/Card/bindingCardLot');
-Route::rule('delCardEInfoLot', 'index/Card/delCardEInfoLot');
 Route::rule('newCreatCard', 'index/Card/newCreatCard');
 Route::rule('getCardType', 'index/Card/getCardType');
 Route::rule('setCardType', 'index/Card/setCardType');
 Route::rule('delCardType', 'index/Card/delCardType');
 Route::rule('getCardAllInfo', 'index/Card/getCardAllInfo');
 Route::rule('creatCardByNum', 'index/Card/creatCardByNum');
+Route::rule('selCardPwdInfo', 'index/Card/selCardPwdInfo');
 
 //用户订单模块
 Route::rule('creatOrder', 'index/UserOrder/creatOrder');

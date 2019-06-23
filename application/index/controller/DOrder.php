@@ -32,6 +32,7 @@ class DOrder
         //判断订单类型 若为门店并使用现金支付则需要区域确认，其他情况均为财务确认
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
+            $discount = $ddata['discount'];
             if ($ddata['type'] == 2 && $pay_type == 0) {
                 $ordertype = 1;
             } else {
@@ -52,7 +53,7 @@ class DOrder
                 //计算商品金额
                 $goodssizedata = Db::table('goods_size')->where('id', $goods_size_id)->find();
                 if ($goodssizedata) {
-                    $cost = $goodssizedata['cost'];
+                    $cost = $goodssizedata['cost'] * $discount;
                 }
                 $payprice += ($cost * $num);
                 //删除当前购物车物品插入到订单详情中
@@ -75,6 +76,91 @@ class DOrder
                 //创建订单
                 Db::table('order')
                     ->insert(['order_id' => $order_id, 'did' => $did, 'creat_time' => date("Y-m-d H:i:s", time()), 'paytype' => $pay_type, 'ordertype' => $ordertype, 'payprice' => $payprice, 'iscard' => $iscard]);
+                $returndata = array('order_id' => $order_id);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function creatNewDOrder()
+    {
+        $did = $_REQUEST['did'];
+        $pay_type = $_REQUEST['paytype'];//支付方式  0、现金支付 1、授信支付
+        $iscard = $_REQUEST['iscard'];//0、卡券1、现货
+        $invoice = $_REQUEST['invoice'];//发票 0不需要1需要
+        if ($invoice == 1) {
+            $invoicetype = $_REQUEST['invoicetype'];//发票类型 0普票 1专票
+        }
+        $dremarks = $_REQUEST['dremarks'];//备注
+        //判断是否可以使用授信支付
+        if ($pay_type == 1) {
+            $lctermdata = Db::table('lcterm')->where('id', 1)->find();
+            if ($lctermdata) {
+                $now = date("Y-m-d", time());
+                if ($now > $lctermdata['lcstart'] && $now < $lctermdata['lcend']) {
+                    $data = array('status' => 1, 'msg' => '目前无法使用授信支付', 'data' => '');
+                    return json($data);
+                }
+            }
+        }
+        //判断订单类型 若为门店并使用现金支付则需要区域确认，其他情况均为财务确认
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            $discount = $ddata['discount'];
+            if ($ddata['type'] == 2 && $pay_type == 0) {
+                $ordertype = 1;
+            } else {
+                $ordertype = 2;
+            }
+            $lc = $ddata['lc'];
+            $usedlc = $ddata['usedlc'];
+            $uselc = $lc - $usedlc;
+            $payprice = 0;
+            //生成订单id
+            $order_id = $did . date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+            //查询购物车勾选商品
+            $shopcardata = Db::table('shopcar')->where('did', $did)->where('ischoose', 1)->column('id,goods_size_id,num');
+            foreach ($shopcardata as $item) {
+                $shopcarid = $item['id'];
+                $goods_size_id = $item['goods_size_id'];
+                $num = $item['num'];
+                //计算商品金额
+                $goodssizedata = Db::table('goods_size')->where('id', $goods_size_id)->find();
+                if ($goodssizedata) {
+                    $cost = $goodssizedata['cost'] * $discount;
+                }
+                $payprice += ($cost * $num);
+                //删除当前购物车物品插入到订单详情中
+                Db::table('shopcar')->where('id', $shopcarid)->delete();
+                Db::table('order_details')
+                    ->insert(['order_id' => $order_id, 'goods_size_id' => $goods_size_id, 'goods_num' => $num]);
+            }
+            //确认授信额度
+            if ($pay_type == 1 && $uselc < $payprice) {
+                $data = array('status' => 1, 'msg' => '授信额度不足', 'data' => '');
+            } else {
+                //授信支付扣除账户中的授信额度
+                if ($pay_type == 1) {
+                    $newusedlc = $usedlc + $payprice;
+                    //记录到授信使用表中
+                    Db::table('lc_history')->insert(['did' => $did, 'amount' => $payprice, 'type' => 0, 'creattime' => date("Y-m-d H:i:s", time())]);
+                    //更新账户中的授信
+                    Db::table('distributor')->where('id', $did)->update(['usedlc' => $newusedlc]);
+                }
+                //创建订单
+                if ($invoice == 1) {
+                    Db::table('order')
+                        ->insert(['order_id' => $order_id, 'did' => $did, 'creat_time' => date("Y-m-d H:i:s", time()),
+                            'paytype' => $pay_type, 'ordertype' => $ordertype, 'payprice' => $payprice, 'iscard' => $iscard,
+                            'invoice' => $invoice, 'invoicetype' => $invoicetype, 'dremarks' => $dremarks]);
+                }
+                Db::table('order')
+                    ->insert(['order_id' => $order_id, 'did' => $did, 'creat_time' => date("Y-m-d H:i:s", time()),
+                        'paytype' => $pay_type, 'ordertype' => $ordertype, 'payprice' => $payprice, 'iscard' => $iscard,
+                        'invoice' => $invoice, 'dremarks' => $dremarks]);
                 $returndata = array('order_id' => $order_id);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             }
