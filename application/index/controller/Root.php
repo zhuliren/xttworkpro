@@ -184,4 +184,174 @@ class Root
         }
         return json($data);
     }
+
+    public function awaitActCard()
+    {
+        $rid = $_REQUEST['rid'];
+        $sort = $_REQUEST['sort'];//排序方式 0时间正序 1时间倒叙 2代理商排序 3卡号排序
+        $type = $_REQUEST['type'];//0全部 1待激活 2已确认激活
+        switch ($sort) {
+            case 0:
+                $orderby = 'awaitactcard.creat_time asc';
+                break;
+            case 1:
+                $orderby = 'awaitactcard.creat_time desc';
+                break;
+            case 2:
+                $orderby = 'distributor.id asc';
+                break;
+            case 3:
+                $orderby = 'awaitactcard.acc asc';
+                break;
+        }
+        switch ($type) {
+            case 1:
+                $atype = 0;
+                break;
+            case 2:
+                $atype = 1;
+                break;
+        }
+        if ($type == 0) {
+            $adata = Db::view('awaitactcard', 'acc,creat_time,type as acttype')
+                ->view('distributor', 'id as did,name,phone', 'awaitactcard.did=distributor.id', 'LEFT')
+                ->view('card', 'gsid', 'awaitactcard.acc=card.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename', 'card.gsid=goods_size.id', 'LEFT')
+                ->order($orderby)->select();
+        } else {
+            $adata = Db::view('awaitactcard', 'acc,creat_time,type as acttype')
+                ->view('distributor', 'id as did,name,phone', 'awaitactcard.did=distributor.id', 'LEFT')
+                ->view('card', 'gsid', 'awaitactcard.acc=card.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename', 'card.gsid=goods_size.id', 'LEFT')
+                ->where('awaitactcard.type', $atype)->order($orderby)->select();
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $adata);
+        return json($data);
+    }
+
+    public function superActCard()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $acc = $_REQUEST['acc'];
+        //查询卡券信息是否已经激活
+        $cdata = Db::table('card')->where('acc', $acc)->find();
+        $time = date("Y-m-d H:i:s", time());
+        if ($cdata) {
+            if ($cdata['type'] == 0) {
+                Db::table('card')->where('acc', $acc)->update(['type' => 2, 'did' => $did, 'rid' => $rid, 'binding_time' => $time, 'act_time' => $time]);
+                $data = array('status' => 0, 'msg' => '激活成功', 'data' => '');
+            } else if ($cdata['type'] == 1) {
+                Db::table('card')->where('acc', $acc)->update(['type' => 2, 'act_time' => $time]);
+                $data = array('status' => 0, 'msg' => '激活成功', 'data' => '');
+            } else {
+                $data = array('status' => 1, 'msg' => '卡券已被激活', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '卡券不存在', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function cardForD()
+    {
+        $acc = $_REQUEST['acc'];
+        $cdata = Db::table('card')->where('acc', $acc)->find();
+        if ($cdata) {
+            $did = $cdata['did'];
+            if ($did) {
+                $ddata = Db::table('distributor')->where('id', $did)->find();
+                if ($ddata) {
+                    $returndata = array('did' => $ddata['id'], 'dname' => $ddata['name']);
+                    $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+                } else {
+                    $data = array('status' => 1, 'msg' => '无代理商', 'data' => '');
+                }
+            } else {
+                $data = array('status' => 1, 'msg' => '无代理商', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '卡券不存在', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function awaitActCardByOid()
+    {
+        $rid = $_REQUEST['rid'];
+        $sort = $_REQUEST['sort'];//排序方式 0时间正序 1时间倒叙 2代理商排序 3卡号排序
+        $type = $_REQUEST['type'];//0全部 1待激活 2已确认激活
+        switch ($sort) {
+            case 0:
+                $orderby = 'awaitactcard.creat_time asc';
+                break;
+            case 1:
+                $orderby = 'awaitactcard.creat_time desc';
+                break;
+            case 2:
+                $orderby = 'distributor.id asc';
+                break;
+            case 3:
+                $orderby = 'awaitactcard.oid asc';
+                break;
+        }
+        switch ($type) {
+            case 1:
+                $atype = 0;
+                break;
+            case 2:
+                $atype = 1;
+                break;
+            default:
+                $atype = 0;
+        }
+        if ($type == 0) {
+            $adata = Db::view('awaitactcard', 'oid,creat_time,type as acttype')
+                ->view('distributor', 'id as did,name,phone', 'awaitactcard.did=distributor.id', 'LEFT')
+                ->view('card', 'gsid', 'awaitactcard.acc=card.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename,price', 'card.gsid=goods_size.id', 'LEFT')
+                ->group('awaitactcard.oid')
+                ->order($orderby)->select();
+        } else {
+            $adata = Db::view('awaitactcard', 'oid,creat_time,type as acttype')
+                ->view('distributor', 'id as did,name,phone', 'awaitactcard.did=distributor.id', 'LEFT')
+                ->view('card', 'gsid', 'awaitactcard.acc=card.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename,price', 'card.gsid=goods_size.id', 'LEFT')
+                ->group('awaitactcard.oid')
+                ->where('awaitactcard.type', $atype)->order($orderby)->select();
+        }
+        $return = array();
+        foreach ($adata as $item) {
+            $cardnumdata = Db::table('awaitactcard')->where('oid', $item['oid'])->column(['count(acc)']);
+            $cardnum = $cardnumdata[0];
+            $ddata = Db::table('distributor')->where('id', $item['did'])->find();
+            $discount = $ddata['discount'];
+            $payprice = $discount * $item['price'] * $cardnum;
+            $return[] = array('oid' => $item['oid'], 'creat_time' => $item['creat_time'], 'acttype' => $item['acttype'], 'payprice' => $payprice,
+                'did' => $item['did'], 'name' => $item['name'], 'phone' => $item['phone'], 'sizename' => $item['sizename'], 'cardnum' => $cardnum);
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $return);
+        return json($data);
+    }
+
+    public function needInvoiceList()
+    {
+        $rid = $_REQUEST['rid'];
+        $odata = Db::view('order', 'id,order_id,payprice,invoicetype,invoiceinfo,confirminvoice')
+            ->view('distributor', 'dp,invoicename,bank,bankacc', 'order.did=distributor.id', 'LEFT')
+            ->where('invoice', 1)
+            ->order('order.confirminvoice asc')
+            ->select();
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $odata);
+        return json($data);
+    }
+
+    public function confirmInvoice()
+    {
+        $rid = $_REQUEST['rid'];
+        $order_id = $_REQUEST['order_id'];
+        Db::table('order')->where('order_id', $order_id)->update(['confirminvoice' => 1]);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+    }
 }

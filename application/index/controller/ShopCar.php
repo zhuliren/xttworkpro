@@ -30,7 +30,7 @@ class ShopCar
             $goodssizedata = Db::table('goods_size')->where('id', $goods_size_id)->find();
             if ($goodssizedata) {
                 $goods_id = $goodssizedata['goods_id'];
-                Db::table('shopcar')->insert(['did' => $did, 'goods_size_id' => $goods_size_id, 'goods_id' => $goods_id, 'num' => 1,]);
+                Db::table('shopcar')->insert(['did' => $did, 'goods_size_id' => $goods_size_id, 'goods_id' => $goods_id, 'num' => 1, 'creat_time' => date("Y-m-d H:i:s", time())]);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => '');
             } else {
                 $data = array('status' => 1, 'msg' => '该规格不存在', 'data' => '');
@@ -89,13 +89,29 @@ class ShopCar
     public function showShopCar()
     {
         $did = $_REQUEST['did'];
-        $shopcardata = Db::view('shopcar', 'goods_size_id,goods_id,num,ischoose')
-            ->view('goods', 'name,headimg', 'shopcar.goods_id=goods.id', 'LEFT')
-            ->view('goods_size', 'size,cost', 'shopcar.goods_size_id=goods_size.id', 'LEFT')
-            ->where('did', $did)
-            ->order('goods_id desc')
-            ->select();
-        $data = array('status' => 0, 'msg' => '成功', 'data' => $shopcardata);
+        //查询代理商折扣
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            $discount = $ddata['discount'];
+            $shopcardata = Db::view('shopcar', 'goods_size_id,goods_id,num,ischoose')
+                ->view('goods', 'name,headimg', 'shopcar.goods_id=goods.id', 'LEFT')
+                ->view('goods_size', 'size', 'shopcar.goods_size_id=goods_size.id', 'LEFT')
+                ->where('did', $did)
+                ->order('creat_time desc')
+                ->select();
+            foreach ($shopcardata as $item) {
+                $gsdata = Db::table('goods_size')
+                    ->where('id', $item['goods_size_id'])
+                    ->find();
+                $cost = $gsdata['price'] * $discount;
+                $returndata[] = array('goods_size_id' => $item['goods_size_id'], 'goods_id' => $item['goods_id'],
+                    'num' => $item['num'], 'ischoose' => $item['ischoose'], 'name' => $item['name'], 'headimg' => $item['headimg'],
+                    'size' => $item['size'], 'cost' => $cost);
+            }
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        } else {
+            $data = array('status' => 0, 'msg' => '代理商id错误', 'data' => '');
+        }
         return json($data);
     }
 
@@ -144,5 +160,12 @@ class ShopCar
             $data = array('status' => 1, 'msg' => '该规格不存在', 'data' => '');
         }
         return json($data);
+    }
+
+    public function delShopCarGoodsSize()
+    {
+        $did = $_REQUEST['did'];
+        $goods_size_id = $_REQUEST['gsid'];
+
     }
 }

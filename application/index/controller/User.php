@@ -42,7 +42,8 @@ class User
                 $account = $distributordata['account'];
                 $type = $distributordata['type'];
                 $grade = $distributordata['grade'];
-                $returndata = array('did' => $did, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade);
+                $wel = '欢迎回来 ' . $name . ' 代理商';
+                $returndata = array('did' => $did, 'name' => $name, 'account' => $account, 'type' => $type, 'grade' => $grade, 'wel' =>$wel);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
             } else {
                 $userdata = Db::table('user')->where('wxid', $openid)->find();

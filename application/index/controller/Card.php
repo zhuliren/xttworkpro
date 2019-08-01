@@ -96,7 +96,7 @@ class Card
         $cardtype = $_REQUEST['typeid'];
         $goodsid = $_REQUEST['goodsid'];
         $gsid = $_REQUEST['gsid'];
-        $num = $endum  - $startnum;
+        $num = $endum - $startnum + 1;
         if ($num > 10000) {
             $data = array('status' => 1, 'msg' => '单词创建请勿超过10000张，防止系统卡顿', 'data' => '');
         } else {
@@ -143,11 +143,11 @@ class Card
         $did = $_REQUEST['did'];
         $like_string = $_REQUEST['likestring'];
         $carddata = Db::view('card', 'acc,type,binding_time,gsid')
-            ->view('goods_size', 'size', 'card . gsid = goods_size . id', 'LEFT')
-            ->view('goods', 'name,headimg', 'goods_size . goods_id = goods . id')
-            ->where('card . did', $did)
-            ->where('card . acc', 'like', ' % ' . $like_string)
-            ->order('card . acc asc')
+            ->view('goods_size', 'size,size_head as headimg', 'card.gsid = goods_size.id', 'LEFT')
+            ->view('goods', 'name', 'goods_size.goods_id = goods.id')
+            ->where('card.did', $did)
+            ->where('card.acc', 'like', '%' . $like_string)
+            ->order('card.acc asc')
             ->select();
         if ($carddata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $carddata);
@@ -162,10 +162,10 @@ class Card
         $acc = $_REQUEST['acc'];
         //判断用户身份
         $carddata = Db::view('card', 'acc,type,binding_time,gsid')
-            ->view('goods_size', 'size', 'card . gsid = goods_size . id', 'LEFT')
-            ->view('goods', 'name,headimg', 'goods_size . goods_id = goods . id')
-            ->where('card . acc', $acc)
-            ->order('card . acc asc')
+            ->view('goods_size', 'size', 'card.gsid = goods_size.id', 'LEFT')
+            ->view('goods', 'name,headimg', 'goods_size.goods_id = goods.id')
+            ->where('card.acc', $acc)
+            ->order('card.acc asc')
             ->select(false);
         if ($carddata) {
             $data = array('status' => 0, 'msg' => '成功', 'data' => $carddata);
@@ -182,6 +182,14 @@ class Card
         $gsid = $_REQUEST['gsid'];
         $acc = $_REQUEST['acc'];
         $orderid = $_REQUEST['orderid'];
+        $orderdata = Db::table('order')->where('order_id', $orderid)->find();
+        $nowcardnum = $orderdata['nowcardnum'];
+        //检查卡券是否与需要激活的商品规格相同
+        $fcarddata = Db::table('card')->where('acc', $acc)->find();
+        if ($fcarddata['gsid'] != $gsid) {
+            $data = array('status' => 1, 'msg' => '卡券与商品规格不匹配', 'data' => '');
+            return json($data);
+        }
         //查询订单该规格是否已出仓全部卡券
         $oddata = Db::table('order_details')->where('goods_size_id', $gsid)->where('order_id', $orderid)->find();
         if ($oddata) {
@@ -197,7 +205,15 @@ class Card
                         Db::table('card')->where('acc', $acc)->update(['rid' => $rid, 'did' => $did, 'binding_time' => date("Y-m-d H:i:s", time()), 'gsid' => $gsid, 'type' => 1]);
                         $newbindingnum = $bindingnum + 1;
                         Db::table('order_details')->where('id', $ddid)->update(['binding_num' => $newbindingnum]);
-                        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+                        $nowcardnum += 1;
+                        Db::table('order')->where('order_id', $orderid)->update(['nowcardnum' => $nowcardnum]);
+                        $orddata = Db::table('order_details')->where('id', $ddid)->find();
+                        if ($orddata['binding_num'] >= $orddata['goods_num']) {
+                            $needbinding = 1;
+                        } else {
+                            $needbinding = 0;
+                        }
+                        $data = array('status' => 0, 'msg' => '成功', 'data' => array('needbinding' => $needbinding));
                     } else {
                         $data = array('status' => 1, 'msg' => '卡券已出库', 'data' => '');
                     }
@@ -205,7 +221,7 @@ class Card
                     $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
                 }
             } else {
-                $data = array('status' => 1, 'msg' => '已出仓完毕', 'data' => '');
+                $data = array('status' => 1, 'msg' => '激活失败，卡券已出仓完毕', 'data' => '');
             }
         } else {
             $data = array('status' => 1, 'msg' => '订单信息错误', 'data' => '');
@@ -221,6 +237,48 @@ class Card
         if ($carddata) {
             $type = $carddata['type'];
             if ($type == 1) {
+                //判断是否存在财务确认卡券列表
+                $adata = Db::table('awaitactcard')->where('did', $did)->where('acc', $acc)->find();
+                if ($adata) {
+                    if ($adata['type'] == 0) {
+                        $data = array('status' => 1, 'msg' => '已提交激活申请，等待确认激活', 'data' => '');
+                    } else {
+                        $data = array('status' => 1, 'msg' => '卡券已激活', 'data' => '');
+                    }
+                } else {
+                    //申城卡券激活确认订单号
+                    $oid = $did . date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+                    //插入待财务确认卡券列表
+                    Db::table('awaitactcard')->insert(['did' => $did, 'acc' => $acc, 'creat_time' => date("Y-m-d H:i:s", time()), 'type' => 0, 'oid' => $oid]);
+                    //查询应付金额
+                    $gsid = $carddata['gsid'];
+                    $gsdata = Db::table('goods_size')->where('id', $gsid)->find();
+                    $price = $gsdata['price'];
+                    //查询折扣
+                    $ddata = Db::table('distributor')->where('id', $did)->find();
+                    $discount = $ddata['discount'];
+                    $payprice = $price * $discount;
+                    $data = array('status' => 0, 'msg' => '激活申请提交成功', 'data' => array('payprice' => $payprice));
+                }
+            } else {
+                $data = array('status' => 1, 'msg' => '卡券状态无法激活', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function actCardByRid()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $acc = $_REQUEST['acc'];
+        $carddata = Db::table('card')->where('did', $did)->where('acc', $acc)->find();
+        if ($carddata) {
+            $type = $carddata['type'];
+            if ($type == 1) {
+                Db::table('awaitactcard')->where('acc', $acc)->update(['type' => 1, 'confirm_time' => date("Y-m-d H:i:s", time())]);
                 Db::table('card')->where('acc', $acc)->update(['type' => 2, 'act_time' => date("Y-m-d H:i:s", time())]);
                 $data = array('status' => 0, 'msg' => '成功', 'data' => '');
             } else {
@@ -228,6 +286,28 @@ class Card
             }
         } else {
             $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function actCardByRidFromOid()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $oid = $_REQUEST['oid'];
+        //查询该代理商名下需要激活的卡券 group by oid
+        $adata = Db::table('awaitactcard')->where('did', $did)->where('oid', $oid)->select();
+        foreach ($adata as $item) {
+            $acc = $item['acc'];
+            $carddata = Db::table('card')->where('did', $did)->where('acc', $acc)->find();
+            if ($carddata) {
+                $type = $carddata['type'];
+                if ($type == 1) {
+                    Db::table('awaitactcard')->where('acc', $acc)->update(['type' => 1, 'confirm_time' => date("Y-m-d H:i:s", time())]);
+                    Db::table('card')->where('acc', $acc)->update(['type' => 2, 'act_time' => date("Y-m-d H:i:s", time())]);
+                }
+            }
+            $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         }
         return json($data);
     }
@@ -242,8 +322,8 @@ class Card
             if ($pwd == $carddata['pwd']) {
                 $gsid = $carddata['gsid'];
                 $goodsdata = Db::view('goods_size', 'size,card_price')
-                    ->view('goods', 'name,headimg', 'goods_size . goods_id = goods . id', 'LEFT')
-                    ->where('goods_size . id', $gsid)
+                    ->view('goods', 'name,headimg', 'goods_size.goods_id = goods.id', 'LEFT')
+                    ->where('goods_size.id', $gsid)
                     ->select();
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $goodsdata);
             } else {
@@ -276,6 +356,10 @@ class Card
         $did = $_REQUEST['did'];
         $fcardacc = $_REQUEST['fcardacc'];
         $lcardacc = $_REQUEST['lcardacc'];
+        //查询折扣
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        $discount = $ddata['discount'];
+        $payprice = 0;
         //查询首卡id
         $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
         if ($fcarddata) {
@@ -286,16 +370,30 @@ class Card
                 if ($fid > $lid) {
                     $data = array('status' => 1, 'msg' => '超出范围', 'data' => '');
                 } else {
-                    for ($i = $fid; $i < $lid; $i++) {
+                    //申城卡券激活确认订单号
+                    $oid = $did . date('Ymd') . substr(implode(NULL, array_map('ord', str_split(substr(uniqid(), 7, 13), 1))), 0, 8);
+                    for ($i = $fid; $i <= $lid; $i++) {
                         $carddata = Db::table('card')->where('did', $did)->where('id', $i)->find();
                         if ($carddata) {
                             $type = $carddata['type'];
                             if ($type == 1) {
-                                Db::table('card')->where('id', $i)->update(['type' => 2, 'act_time' => date("Y-m-d H:i:s", time())]);
+                                $adata = Db::table('awaitactcard')->where('acc', $carddata['acc'])->find();
+                                if ($adata) {
+                                } else {
+                                    //查询应付金额
+                                    $gsid = $carddata['gsid'];
+                                    $gsdata = Db::table('goods_size')->where('id', $gsid)->find();
+                                    $price = $gsdata['price'];
+                                    //计算当前价格
+                                    $nowprice = $price * $discount;
+                                    $payprice += $nowprice;
+                                    //插入待财务确认卡券列表
+                                    Db::table('awaitactcard')->insert(['did' => $did, 'acc' => $carddata['acc'], 'creat_time' => date("Y-m-d H:i:s", time()), 'type' => 0, 'oid' => $oid]);
+                                }
                             }
                         }
                     }
-                    $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+                    $data = array('status' => 0, 'msg' => '成功', 'data' => array('payprice' => $payprice));
                 }
             } else {
                 $data = array('status' => 1, 'msg' => '末张卡券账号不存在', 'data' => '');
@@ -314,6 +412,31 @@ class Card
         $fcardacc = $_REQUEST['fcardacc'];
         $lcardacc = $_REQUEST['lcardacc'];
         $orderid = $_REQUEST['orderid'];
+        $orderdata = Db::table('order')->where('order_id', $orderid)->find();
+        $nowcardnum = $orderdata['nowcardnum'];
+        //查询首卡id
+        $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
+        $lcarddata = Db::table('card')->where('acc', $lcardacc)->find();
+        //判断卡券是否匹配
+        if ($fcarddata) {
+            if ($lcarddata) {
+                if ($fcarddata['gsid'] != $lcarddata['gsid']) {
+                    $data = array('status' => 1, 'msg' => '首末卡券非同一商品规格', 'data' => '');
+                    return json($data);
+                }
+            } else {
+                $data = array('status' => 1, 'msg' => '末张卡券账号不存在', 'data' => '');
+                return json($data);
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '首张卡券账号不存在', 'data' => '');
+            return json($data);
+        }
+        //检查卡券是否与需要激活的商品规格相同
+        if ($fcarddata['gsid'] != $gsid) {
+            $data = array('status' => 1, 'msg' => '卡券与商品规格不匹配', 'data' => '');
+            return json($data);
+        }
         //查询订单该规格是否已出仓全部卡券
         $oddata = Db::table('order_details')->where('goods_size_id', $gsid)->where('order_id', $orderid)->find();
         if ($oddata) {
@@ -321,17 +444,14 @@ class Card
             $bindingnum = $oddata['binding_num'];
             $ddid = $oddata['id'];
             if ($bindingnum >= $goodsnum) {
-                $data = array('status' => 1, 'msg' => '卡券已全部出仓', 'data' => '');
-                return $data;
+                $data = array('status' => 1, 'msg' => '激活失败，卡券已全部出仓', 'data' => '');
+                return json($data);
             }
         } else {
             $data = array('status' => 1, 'msg' => '订单信息错误', 'data' => '');
-            return $data;
+            return json($data);
         }
-        //查询首卡id
-        $fcarddata = Db::table('card')->where('acc', $fcardacc)->find();
         if ($fcarddata) {
-            $lcarddata = Db::table('card')->where('acc', $lcardacc)->find();
             if ($lcarddata) {
                 $fid = $fcarddata['id'];
                 $lid = $lcarddata['id'];
@@ -339,24 +459,37 @@ class Card
                     $data = array('status' => 1, 'msg' => '超出范围', 'data' => '');
                 } else {
                     $nownum = 0;
-                    for ($i = $fid; $i < $lid; $i++) {
+                    for ($i = $fid; $i <= $lid; $i++) {
                         $carddata = Db::table('card')->where('id', $i)->find();
                         if ($carddata) {
                             $type = $carddata['type'];
                             if ($type == 0) {
                                 Db::table('card')->where('id', $i)->update(['rid' => $rid, 'did' => $did, 'binding_time' => date("Y-m-d H:i:s", time()), 'gsid' => $gsid, 'type' => 1]);
                                 $nownum++;
-                                $newbindingnum = $bindingnum + 1;
+                                $newbindingnum = $bindingnum + $nownum;
                                 if ($newbindingnum <= $goodsnum) {
                                     Db::table('order_details')->where('id', $ddid)->update(['binding_num' => $newbindingnum]);
                                 } else {
-                                    $data = array('status' => 1, 'msg' => '已出仓' . $nownum . '张卡券，全部出仓完毕', 'data' => '');
-                                    return $data;
+                                    $data = array('status' => 1, 'msg' => '已出仓' . $nownum . '张卡券，全部出仓完毕', 'data' => array('needbinding' => 1));
+                                    $nowcardnum += $nownum;
+                                    Db::table('order')->where('order_id', $orderid)->update(['nowcardnum' => $nowcardnum]);
+                                    return json($data);
                                 }
-                                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+                            } else {
+                                $data = array('status' => 1, 'msg' => '卡券号' . $carddata['acc'] . '已出仓,后续卡券暂停激活', 'data' => '');
+                                return json($data);
                             }
                         }
                     }
+                    $nowcardnum += $nownum;
+                    Db::table('order')->where('order_id', $orderid)->update(['nowcardnum' => $nowcardnum]);
+                    $orddata = Db::table('order_details')->where('id', $ddid)->find();
+                    if ($orddata['binding_num'] >= $orddata['goods_num']) {
+                        $needbinding = 1;
+                    } else {
+                        $needbinding = 0;
+                    }
+                    $data = array('status' => 0, 'msg' => '成功', 'data' => array('needbinding' => $needbinding));
                 }
             } else {
                 $data = array('status' => 1, 'msg' => '末张卡券账号不存在', 'data' => '');
@@ -374,12 +507,12 @@ class Card
         $ddata = Db::table('distributor')->where('id', $did)->find();
         if ($ddata) {
             $carddata = Db::view('card', 'acc,type,creat_time,binding_time,act_time,used_time,no,goodsno,modelid')
-                ->view('root', 'acc as racc', 'card . rid = root . id', 'LEFT')
-                ->view('distributor', 'name as dname,type as dtype,grade as dgrade', 'card . rid = distributor . id', 'LEFT')
-                ->view('user', 'name as uname', 'card . user_id = user . id', 'LEFT')
-                ->view('goods_size', 'size as gsize,modelid', 'card . gsid = goods_size . id', 'LEFT')
-                ->view('goods', 'name as gname,goodsno', 'goods_size . goods_id = goods . id', 'RIGHT')
-                ->where('card . acc', $acc)
+                ->view('root', 'acc as racc', 'card.rid = root.id', 'LEFT')
+                ->view('distributor', 'name as dname,type as dtype,grade as dgrade', 'card.rid = distributor.id', 'LEFT')
+                ->view('user', 'name as uname', 'card.user_id = user.id', 'LEFT')
+                ->view('goods_size', 'size as gsize,modelid', 'card.gsid = goods_size.id', 'LEFT')
+                ->view('goods', 'name as gname,goodsno', 'goods_size.goods_id = goods.id', 'RIGHT')
+                ->where('card.acc', $acc)
                 ->select();
             if ($carddata) {
                 $data = array('status' => 0, 'msg' => '成功', 'data' => $carddata);
@@ -414,14 +547,39 @@ class Card
                 $list = Db::table('card')->where('gsid', $gsid)->where('isexport', $isexport)->column('id,acc,pwdinfo,creat_time,isexport');
             }
         }
+        $newlist = array();
+        foreach ($list as $item) {
+            $newacc = '`' . $item['acc'];
+            $newpwdinfo = '`' . $item['pwdinfo'];
+            $newlist[] = array('id' => $item['id'], 'acc' => $newacc, 'pwdinfo' => $newpwdinfo, 'creat_time' => $item['creat_time'], 'isexport' => $item['isexport']);
+        }
         if ($type == 1) {
             foreach ($list as $item) {
                 Db::table('card')->where('id', $item['id'])->update(['isexport' => 1]);
             }
         }
-        $data = array('status' => 0, 'msg' => '成功', 'data' => $list);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $newlist);
         return json($data);
     }
 
-
+    public function myDCard()
+    {
+        $did = $_REQUEST['did'];
+        $type = $_REQUEST['type'];//0全部 1待激活 2已激活 3已完成
+        if ($type == 0) {
+            $cdata = Db::view('card', 'acc,type as cardtype')
+                ->view('awaitactcard', 'type as acttype', 'card.acc=awaitactcard.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename', 'card.gsid=goods_size.id', 'LEFT')
+                ->view('goods', 'name as goodsname', 'goods_size.goods_id=goods.id', 'LEFT')
+                ->where('card.did', $did)->select();
+        } else {
+            $cdata = Db::view('card', 'acc,type as cardtype')
+                ->view('awaitactcard', 'type as acttype', 'card.acc=awaitactcard.acc', 'LEFT')
+                ->view('goods_size', 'size as sizename', 'card.gsid=goods_size.id', 'LEFT')
+                ->view('goods', 'name as goodsname', 'goods_size.goods_id=goods.id', 'LEFT')
+                ->where('card.did', $did)->where('card.type', $type)->select();
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $cdata);
+        return json($data);
+    }
 }

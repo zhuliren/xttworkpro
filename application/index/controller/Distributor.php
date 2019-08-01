@@ -25,6 +25,11 @@ class Distributor
         $due = $_REQUEST['due'];
         $discount = $_REQUEST['discount'];//拿货折扣
         $remarks = $_REQUEST['remarks'];//代理商备注
+        $dp = $_REQUEST['dp'];//代理商税号
+        $invoicename = $_REQUEST['invoicename'];//开票名称
+        $bank = $_REQUEST['bank'];//开户行
+        $bankacc = $_REQUEST['bankacc'];//开户行账号
+
         $lc = 0;
         switch ($grade) {
             case 1:
@@ -55,7 +60,8 @@ class Distributor
         $did = Db::table('distributor')->insertGetId(['account' => $account,
             'password' => $password, 'address' => $address, 'type' => $type,
             'grade' => $grade, 'name' => $name, 'phone' => $phone, 'due' => $due, 'lc' => $lc, 'usedlc' => 0,
-            'discount' => $discount, 'remarks' => $remarks]);
+            'discount' => $discount, 'remarks' => $remarks,
+            'dp' => $dp, 'invoicename' => $invoicename, 'bank' => $bank, 'bankacc' => $bankacc]);
         //创建代理商钱包
         Db::table('wallet')->insert(['did' => $did]);
         $returndata = array('did' => $did);
@@ -71,8 +77,16 @@ class Distributor
         $phone = $_REQUEST['phone'];
         $due = $_REQUEST['due'];
         $discount = $_REQUEST['discount'];//拿货折扣
+        $type = $_REQUEST['type'];
+        $grade = $_REQUEST['grade'];
+        $remarks = $_REQUEST['remarks'];
+        $dp = $_REQUEST['dp'];
+        $invoicename = $_REQUEST['invoicename'];
+        $bank = $_REQUEST['bank'];
+        $bankacc = $_REQUEST['bankacc'];
         Db::table('distributor')->where('id', $did)->update(['address' => $address,
-            'name' => $name, 'phone' => $phone, 'due' => $due, 'discount' => $discount]);
+            'name' => $name, 'phone' => $phone, 'due' => $due, 'discount' => $discount,
+            'type' => $type, 'grade' => $grade, 'remarks' => $remarks, 'dp' => $dp, 'invoicename' => $invoicename, 'bank' => $bank, 'bankacc' => $bankacc,]);
         $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         return json($data);
     }
@@ -92,6 +106,7 @@ class Distributor
         $distributordata = Db::table('distributor')->where('id', $distributor_id)->find();
         if ($distributordata) {
             $grade = $distributordata['grade'];
+            $name = $distributordata['name'];
             //经销商等级 1、S+ 2、S 3、A 4、B 5、C 6、精选店 7、优选店 8、旗舰店
             switch ($grade) {
                 case 1:
@@ -120,7 +135,8 @@ class Distributor
                     break;
             }
             $due_time = $distributordata['due'];
-            $returndata = array('message' => $message, 'duetime' => $due_time);
+            $wel = '欢迎回来 ' . $name . ' 代理商';
+            $returndata = array('message' => $message, 'wel' => $wel, 'duetime' => $due_time);
             $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         } else {
             $data = array('status' => 1, 'msg' => '代理商不存在', 'data' => '');
@@ -224,24 +240,24 @@ class Distributor
         $rid = $_REQUEST['rid'];
         $did = $_REQUEST['did'];
         $amount = $_REQUEST['amount'];
-        $type = $_REQUEST['type'];//1:预充值 2:装修补贴 3:赠券
+        $type = $_REQUEST['type'];//1:预充值 3:赠券
+        $remarks = $_REQUEST['remarks'];//备注
         $walletdata = Db::table('wallet')->where('did', $did)->find();
         if ($walletdata) {
             $ad_payment = $walletdata['ad_payment'];
-            $subsidy = $walletdata['subsidy'];
             $coupon = $walletdata['coupon'];
             switch ($type) {
                 case 1:
                     $ad_payment = $ad_payment + $amount;
                     break;
                 case 2:
-                    $subsidy = $subsidy + $amount;
                     break;
                 case 3:
                     $coupon = $coupon + $amount;
                     break;
             }
-            Db::table('wallet')->where('did', $did)->update(['ad_payment' => $ad_payment, 'subsidy' => $subsidy, 'coupon' => $coupon]);
+            Db::table('wallet')->where('did', $did)->update(['ad_payment' => $ad_payment, 'coupon' => $coupon]);
+            Db::table('wallet_detailed')->insert(['did' => $did, 'amount' => $amount, 'type' => $type, 'time' => date("Y-m-d H:i:s", time()), 'remarks' => $remarks]);
             $data = array('status' => 0, 'msg' => '成功', 'data' => '');
         } else {
             $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
@@ -249,7 +265,8 @@ class Distributor
         return json($data);
     }
 
-    public function showBalance(){
+    public function showBalance()
+    {
         $did = $_REQUEST['did'];
         $walletdata = Db::table('wallet')->where('did', $did)->find();
         if ($walletdata) {
@@ -257,6 +274,182 @@ class Distributor
         } else {
             $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
         }
+        return json($data);
+    }
+
+    public function changePwd()
+    {
+        $did = $_REQUEST['did'];
+        $oldpwd = md5(md5($_REQUEST['oldpwd']));
+        $newpwd = md5(md5($_REQUEST['newpwd']));
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            if ($oldpwd == $ddata['password']) {
+                Db::table('distributor')->where('id', $did)->update(['password' => $newpwd]);
+                $data = array('status' => 0, 'msg' => '修改成功', 'data' => '');
+            } else {
+                $data = array('status' => 1, 'msg' => '原始密码错误', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function useCard()
+    {
+        $did = $_REQUEST['did'];
+        $acc = $_REQUEST['acc'];
+        $pwd = md5(md5($_REQUEST['pwd']));
+        //查询卡券
+        $carddata = Db::table('card')->where('acc', $acc)->find();
+        if ($carddata) {
+            if ($pwd == $carddata['pwd']) {
+                if ($carddata['type'] == 2) {
+                    //修改卡券状态
+                    Db::table('card')->where('acc', $acc)->update(['type' => 3, 'isdused' => 1, 'useddid' => $did, 'used_time' => date("Y-m-d H:i:s", time())]);
+                    $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+                } else {
+                    if ($carddata['type'] == 3) {
+                        $data = array('status' => 1, 'msg' => '卡券已使用', 'data' => '');
+                    } else if ($carddata['type'] == 0) {
+                        $data = array('status' => 1, 'msg' => '卡券无法使用', 'data' => '');
+                    } else if ($carddata['type'] == 1) {
+                        $data = array('status' => 1, 'msg' => '卡券未激活', 'data' => '');
+                    }
+                }
+            } else {
+                $data = array('status' => 1, 'msg' => '卡券密码错误', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '卡券账号不存在', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function myWallet()
+    {
+        $did = $_REQUEST['did'];
+        $walletdata = Db::table('wallet')->where('did', $did)->find();
+        if ($walletdata) {
+            $detaileddata = Db::table('wallet_detailed')->where('did', $did)->order('time desc')->column('id,amount,type,time');
+            $returndata = array('info' => $walletdata, 'detailed' => $detaileddata);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function showInvoiceInfo()
+    {
+        $did = $_REQUEST['did'];
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            $returndata = array('dp' => $ddata['dp'], 'invoicename' => $ddata['invoicename'], 'bank' => $ddata['bank'], 'bankacc' => $ddata['bankacc']);
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        } else {
+            $data = array('status' => 1, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function logOff()
+    {
+        $did = $_REQUEST['did'];
+        Db::table('distributor')->where('id', $did)->update(['wxid' => '']);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+    }
+
+    public function dInfo()
+    {
+        $did = $_REQUEST['did'];
+        $ddata = Db::table('distributor')->where('id', $did)->find();
+        if ($ddata) {
+            $data = array('status' => 0, 'msg' => '成功', 'data' => $ddata);
+        } else {
+            $data = array('status' => 0, 'msg' => '代理商id错误', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function resetDPwd()
+    {
+        $did = $_REQUEST['did'];
+        $password = md5(md5($_REQUEST['newpwd']));
+        Db::table('distributor')->where('id', $did)->update(['password' => $password]);
+        $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+        return json($data);
+    }
+
+    //区域代理商列表
+    public function DForRegion()
+    {
+        $rid = $_REQUEST['rid'];
+        $ddata = Db::table('distributor')->where('type', 1)->select();
+        $returndata = array();
+        foreach ($ddata as $item) {
+            $returndata[] = array('id' => $item['id'], 'name' => $item['name']);
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+        return json($data);
+    }
+
+    //当前区域代理商
+    public function nowRegion()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $ddata = Db::table('distributor')->where('id', $did)->where('type', 2)->find();
+        if ($ddata) {
+            $cdata = Db::table('channer')->where('shop_id', $did)->find();
+            if ($cdata) {
+                $rddata = Db:: table('distributor')->where('id', $cdata['region_id'])->where('type', 1)->find();
+                $returndata = array('did' => $rddata['id'], 'name' => $rddata['name']);
+                $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
+            } else {
+                $data = array('status' => 10, 'msg' => '无上级区域代理', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '非门店代理无法进行此操作', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function bindingRegion()
+    {
+        $rid = $_REQUEST['rid'];
+        $did = $_REQUEST['did'];
+        $rdid = $_REQUEST['rdid'];
+        $ddata = Db::table('distributor')->where('id', $did)->where('type', 2)->find();
+        if ($ddata) {
+            $rddata = Db::table('distributor')->where('id', $rdid)->where('type', 1)->find();
+            if ($rddata) {
+                $cdata = Db::table('channer')->where('shop_id', $did)->find();
+                if ($cdata) {
+                    Db::table('channer')->where('shop_id', $did)->update(['region_id' => $rdid]);
+                } else {
+                    Db::table('channer')->insert(['region_id' => $rdid, 'shop_id' => $did]);
+                }
+                $data = array('status' => 0, 'msg' => '成功', 'data' => '');
+            } else {
+                $data = array('status' => 1, 'msg' => '区域代理商id错误', 'data' => '');
+            }
+        } else {
+            $data = array('status' => 1, 'msg' => '非门店代理无法进行此操作', 'data' => '');
+        }
+        return json($data);
+    }
+
+    public function dList()
+    {
+        $ddata = Db::table('distributor')->where('logout', 0)->order('id asc')->select();
+        $returndata = array();
+        foreach ($ddata as $item) {
+            $returndata[] = array('did' => $item['id'], 'dname' => $item['name']);
+        }
+        $data = array('status' => 0, 'msg' => '成功', 'data' => $returndata);
         return json($data);
     }
 }
